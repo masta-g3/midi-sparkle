@@ -1,0 +1,706 @@
+{
+  "device_name": "Arturia SparkLE",
+  "created_at": "2025-06-22 16:33:09",
+  "groups": {
+    "numbers": [
+      {
+        "type": "button",
+        "id": 51,
+        "name": "Pad 51 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 51,
+        "custom_name": "1_on"
+      },
+      {
+        "type": "button",
+        "id": 51,
+        "name": "Pad 51 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 51,
+        "custom_name": "1_off"
+      },
+      {
+        "type": "button",
+        "id": 52,
+        "name": "Pad 52 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 52,
+        "custom_name": "2_on"
+      },
+      {
+        "type": "button",
+        "id": 52,
+        "name": "Pad 52 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 52,
+        "custom_name": "2_off"
+      },
+      {
+        "type": "button",
+        "id": 53,
+        "name": "Pad 53 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 53,
+        "custom_name": "3_on"
+      },
+      {
+        "type": "button",
+        "id": 53,
+        "name": "Pad 53 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 53,
+        "custom_name": "3_off"
+      },
+      {
+        "type": "button",
+        "id": 54,
+        "name": "Pad 54 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 54,
+        "custom_name": "4_on"
+      },
+      {
+        "type": "button",
+        "id": 54,
+        "name": "Pad 54 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 54,
+        "custom_name": "4_off"
+      },
+      {
+        "type": "button",
+        "id": 55,
+        "name": "Pad 55 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 55,
+        "custom_name": "5_on"
+      },
+      {
+        "type": "button",
+        "id": 55,
+        "name": "Pad 55 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 55,
+        "custom_name": "5_off"
+      },
+      {
+        "type": "button",
+        "id": 56,
+        "name": "Pad 56 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 56,
+        "custom_name": "6_on"
+      },
+      {
+        "type": "button",
+        "id": 56,
+        "name": "Pad 56 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 56,
+        "custom_name": "6_off"
+      },
+      {
+        "type": "button",
+        "id": 57,
+        "name": "Pad 57 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 57,
+        "custom_name": "7_on"
+      },
+      {
+        "type": "button",
+        "id": 57,
+        "name": "Pad 57 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 57,
+        "custom_name": "7_off"
+      },
+      {
+        "type": "button",
+        "id": 58,
+        "name": "Pad 58 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 58,
+        "custom_name": "8_on"
+      },
+      {
+        "type": "button",
+        "id": 58,
+        "name": "Pad 58 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 58,
+        "custom_name": "8_off"
+      },
+      {
+        "type": "button",
+        "id": 59,
+        "name": "Pad 59 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 59,
+        "custom_name": "9_on"
+      },
+      {
+        "type": "button",
+        "id": 59,
+        "name": "Pad 59 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 59,
+        "custom_name": "9_off"
+      },
+      {
+        "type": "button",
+        "id": 60,
+        "name": "Pad 60 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 60,
+        "custom_name": "10_on"
+      },
+      {
+        "type": "button",
+        "id": 60,
+        "name": "Pad 60 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 60,
+        "custom_name": "10_off"
+      },
+      {
+        "type": "button",
+        "id": 61,
+        "name": "Pad 61 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 61,
+        "custom_name": "11_on"
+      },
+      {
+        "type": "button",
+        "id": 61,
+        "name": "Pad 61 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 61,
+        "custom_name": "11_off"
+      },
+      {
+        "type": "button",
+        "id": 62,
+        "name": "Pad 62 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 62,
+        "custom_name": "12_on"
+      },
+      {
+        "type": "button",
+        "id": 62,
+        "name": "Pad 62 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 62,
+        "custom_name": "12_off"
+      },
+      {
+        "type": "button",
+        "id": 63,
+        "name": "Pad 63 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 63,
+        "custom_name": "13_on"
+      },
+      {
+        "type": "button",
+        "id": 63,
+        "name": "Pad 63 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 63,
+        "custom_name": "13_off"
+      },
+      {
+        "type": "button",
+        "id": 64,
+        "name": "Pad 64 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 64,
+        "custom_name": "14_on"
+      },
+      {
+        "type": "button",
+        "id": 64,
+        "name": "Pad 64 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 64,
+        "custom_name": "14_off"
+      },
+      {
+        "type": "button",
+        "id": 65,
+        "name": "Pad 65 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 65,
+        "custom_name": "15_on"
+      },
+      {
+        "type": "button",
+        "id": 65,
+        "name": "Pad 65 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 65,
+        "custom_name": "15_off"
+      },
+      {
+        "type": "button",
+        "id": 66,
+        "name": "Pad 66 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 66,
+        "custom_name": "16_on"
+      },
+      {
+        "type": "button",
+        "id": 66,
+        "name": "Pad 66 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 66,
+        "custom_name": "16_off"
+      }
+    ],
+    "big_pads": [
+      {
+        "type": "button",
+        "id": 36,
+        "name": "Pad 36 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 36,
+        "custom_name": "1_on"
+      },
+      {
+        "type": "button",
+        "id": 36,
+        "name": "Pad 36 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 36,
+        "custom_name": "1_off"
+      },
+      {
+        "type": "button",
+        "id": 38,
+        "name": "Pad 38 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 38,
+        "custom_name": "2_on"
+      },
+      {
+        "type": "button",
+        "id": 38,
+        "name": "Pad 38 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 38,
+        "custom_name": "2_off"
+      },
+      {
+        "type": "button",
+        "id": 42,
+        "name": "Pad 42 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 42,
+        "custom_name": "3_on"
+      },
+      {
+        "type": "button",
+        "id": 42,
+        "name": "Pad 42 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 42,
+        "custom_name": "3_off"
+      },
+      {
+        "type": "button",
+        "id": 46,
+        "name": "Pad 46 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 46,
+        "custom_name": "4_on"
+      },
+      {
+        "type": "button",
+        "id": 46,
+        "name": "Pad 46 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 46,
+        "custom_name": "4_off"
+      },
+      {
+        "type": "button",
+        "id": 50,
+        "name": "Pad 50 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 50,
+        "custom_name": "5_on"
+      },
+      {
+        "type": "button",
+        "id": 50,
+        "name": "Pad 50 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 50,
+        "custom_name": "5_off"
+      },
+      {
+        "type": "button",
+        "id": 47,
+        "name": "Pad 47 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 47,
+        "custom_name": "6_on"
+      },
+      {
+        "type": "button",
+        "id": 47,
+        "name": "Pad 47 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 47,
+        "custom_name": "6_off"
+      },
+      {
+        "type": "button",
+        "id": 43,
+        "name": "Pad 43 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 43,
+        "custom_name": "7_on"
+      },
+      {
+        "type": "button",
+        "id": 43,
+        "name": "Pad 43 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 43,
+        "custom_name": "7_off"
+      },
+      {
+        "type": "button",
+        "id": 49,
+        "name": "Pad 49 ON",
+        "midi_type": "note_on",
+        "midi_channel": 0,
+        "midi_note": 49,
+        "custom_name": "8_on"
+      },
+      {
+        "type": "button",
+        "id": 49,
+        "name": "Pad 49 OFF",
+        "midi_type": "note_off",
+        "midi_channel": 0,
+        "midi_note": 49,
+        "custom_name": "8_off"
+      }
+    ],
+    "parameter_knobs": [
+      {
+        "type": "knob",
+        "id": 16,
+        "name": "k1",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 16,
+        "custom_name": "k1"
+      },
+      {
+        "type": "knob",
+        "id": 17,
+        "name": "k2",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 17,
+        "custom_name": "k2"
+      },
+      {
+        "type": "knob",
+        "id": 18,
+        "name": "k3",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 18,
+        "custom_name": "k3"
+      }
+    ],
+    "presets": [
+      {
+        "type": "knob",
+        "id": 20,
+        "name": "bank",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 20,
+        "custom_name": "bank"
+      },
+      {
+        "type": "knob",
+        "id": 21,
+        "name": "pattern",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 21,
+        "custom_name": "pattern"
+      },
+      {
+        "type": "knob",
+        "id": 22,
+        "name": "sequence",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 22,
+        "custom_name": "sequence"
+      },
+      {
+        "type": "knob",
+        "id": 23,
+        "name": "tune",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 23,
+        "custom_name": "tune"
+      }
+    ],
+    "context_knobs": [
+      {
+        "type": "knob",
+        "id": 7,
+        "name": "tempo",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 7,
+        "custom_name": "tempo"
+      },
+      {
+        "type": "knob",
+        "id": 10,
+        "name": "volume",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 10,
+        "custom_name": "volume"
+      },
+      {
+        "type": "knob",
+        "id": 12,
+        "name": "divide",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 12,
+        "custom_name": "divide"
+      },
+      {
+        "type": "knob",
+        "id": 13,
+        "name": "move",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 13,
+        "custom_name": "move"
+      }
+    ],
+    "loop_controls": [
+      {
+        "type": "knob",
+        "id": 19,
+        "name": "knob",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 19,
+        "custom_name": "knob"
+      },
+      {
+        "type": "knob",
+        "id": 78,
+        "name": "project",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 78,
+        "custom_name": "project"
+      },
+      {
+        "type": "knob",
+        "id": 77,
+        "name": "kit",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 77,
+        "custom_name": "kit"
+      },
+      {
+        "type": "knob",
+        "id": 76,
+        "name": "instrument",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 76,
+        "custom_name": "instrument"
+      }
+    ],
+    "global_pads": [
+      {
+        "type": "knob",
+        "id": 66,
+        "name": "filter",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 66,
+        "custom_name": "filter"
+      },
+      {
+        "type": "knob",
+        "id": 67,
+        "name": "slicer",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 67,
+        "custom_name": "slicer"
+      },
+      {
+        "type": "knob",
+        "id": 68,
+        "name": "roller",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 68,
+        "custom_name": "roller"
+      },
+      {
+        "type": "knob",
+        "id": 69,
+        "name": "filter2",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 69,
+        "custom_name": "filter2"
+      },
+      {
+        "type": "knob",
+        "id": 70,
+        "name": "send",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 70,
+        "custom_name": "send"
+      },
+      {
+        "type": "knob",
+        "id": 71,
+        "name": "pan",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 71,
+        "custom_name": "pan"
+      }
+    ],
+    "control_pads": [
+      {
+        "type": "knob",
+        "id": 121,
+        "name": "select",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 121,
+        "custom_name": "select"
+      },
+      {
+        "type": "knob",
+        "id": 123,
+        "name": "numbers",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 123,
+        "custom_name": "numbers"
+      },
+      {
+        "type": "knob",
+        "id": 120,
+        "name": "mute",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 120,
+        "custom_name": "mute"
+      },
+      {
+        "type": "knob",
+        "id": 122,
+        "name": "solo",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 122,
+        "custom_name": "solo"
+      },
+      {
+        "type": "knob",
+        "id": 24,
+        "name": "copy",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 24,
+        "custom_name": "copy"
+      },
+      {
+        "type": "knob",
+        "id": 25,
+        "name": "erase",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 25,
+        "custom_name": "erase"
+      },
+      {
+        "type": "knob",
+        "id": 26,
+        "name": "on",
+        "midi_type": "control_change",
+        "midi_channel": 0,
+        "midi_control": 26,
+        "custom_name": "on"
+      }
+    ]
+  }
+}
