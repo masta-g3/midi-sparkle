@@ -65,18 +65,37 @@ Harmonic notes in pentatonic scale that layer beautifully over any background te
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the Musical Garden
+# Run the Musical Garden (Simple CLI)
 python sparkle_musical_garden.py
+
+# Or run with Garden Monitor Dashboard (TUI)
+python sparkle_musical_garden.py --tui
 ```
 
 ## 🚀 Usage
 
+### 🌸 Simple CLI Mode (Default)
 1. **Connect your SparkLE** and ensure it's powered on
 2. **Run the application**: `python sparkle_musical_garden.py`
 3. **Start exploring**: Press big pads for background textures, number pads for melodies
 4. **Layer sounds**: Combine multiple background textures and add melodic notes
 5. **Use knobs**: Adjust environmental parameters for different moods
 6. **Press Ctrl+C**: Put the garden to sleep with a gentle closing ritual
+
+### 📺 Garden Monitor Dashboard (TUI Mode)
+For parents who want visual monitoring of their toddler's musical exploration:
+
+```bash
+# Run with full-screen garden monitoring dashboard
+python sparkle_musical_garden.py --tui
+```
+
+**TUI Features:**
+- 🌍 **Real-time Garden Status**: See which elements are active (ON/OFF)
+- 🎛️ **Environmental Controls**: Live display of Temperature, Water, Time, Season
+- 🎵 **Activity Logging**: Track recent melodies and garden interactions  
+- ⌨️ **Parent Controls**: `[H]elp` `[R]eset` `[Q]uit` `[M]ute` `[C]lear`
+- 🖥️ **Minimal Interface**: Clean curses-based dashboard (no GUI dependencies)
 
 The Musical Garden will:
 - 🔍 Auto-detect your SparkLE controller
@@ -132,6 +151,8 @@ The Musical Garden follows evidence-based principles for toddler development:
 - **🔄 Wrong device connected**: App will use first available MIDI device if SparkLE not detected
 - **🔇 No sound**: Check that `pygame` installed correctly and system audio working
 - **⚠️ Audio artifacts**: Ensure no other applications are using audio exclusively
+- **📺 TUI not displaying**: Ensure terminal is at least 70x20 characters for Garden Monitor Dashboard
+- **🖥️ TUI colors missing**: Some terminals don't support colors, but functionality remains unchanged
 
 ## 🌟 Future Enhancements
 

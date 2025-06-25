@@ -34,12 +34,15 @@ midi-sparkle/
 - Real-time audio manipulation (Temperature→Pitch, Water→Echo, Time→Brightness, Seasons→Character)
 - Toddler-safe audio processing (volume limits, frequency range 200Hz-4kHz)
 - Opening and closing rituals for structured play sessions
-- Command-line interface with simple text feedback
+- **Two Interface Modes**:
+  - Simple CLI with minimal text feedback (default)
+  - Garden Monitor Dashboard with full-screen TUI (`--tui` flag)
 
 **Key Classes**:
 - `AudioSynthesizer`: Generates natural-sounding audio
 - `NatureSounds`: Collection of nature-themed sounds
 - `MusicalGarden`: Main application controller
+- `GardenMonitorTUI`: Parent-friendly monitoring dashboard (curses-based)
 
 ### 2. Mario Pipe MIDI Monitor (`deprecated/midi_monitor.py`)
 **Purpose**: Visual MIDI monitor with Mario-themed pipe graphics  
@@ -83,9 +86,29 @@ Python dependencies:
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the application
+# Run with simple CLI interface (default)
 python sparkle_musical_garden.py
+
+# Run with Garden Monitor Dashboard (parent-friendly TUI)
+python sparkle_musical_garden.py --tui
 ```
+
+### Interface Modes
+
+#### Simple CLI Mode (Default)
+- Minimal console output for clean operation
+- Essential status messages and garden state updates
+- Perfect for headless operation or minimal distraction
+- All audio functionality and MIDI control unchanged
+
+#### Garden Monitor Dashboard (TUI Mode)
+- Full-screen curses-based monitoring interface
+- Real-time visual status of all garden elements (ON/OFF states)
+- Live environmental parameter display (Temperature, Water, Time, Season, Volume)
+- Parent-friendly controls: `[H]elp` `[R]eset` `[Q]uit` `[M]ute` `[C]lear`
+- Activity logging with recent melodies and garden interactions
+- Minimum terminal size: 70x20 characters
+- Uses built-in `curses` library - no additional dependencies
 
 ### Setting up MIDI Mappings
 ```bash
@@ -107,7 +130,9 @@ The Musical Garden follows these principles:
 - Audio synthesis uses pentatonic scales to avoid dissonance
 - All sounds have soft attack/release envelopes for gentle experience
 - MIDI processing includes proper note_on/note_off handling
-- Threading is used for real-time MIDI monitoring and GUI updates
+- Threading is used for real-time MIDI monitoring and status updates
+- TUI interface uses built-in curses library for cross-platform terminal UI
+- Modular design: TUI wraps core logic without changing audio/MIDI functionality
 - Error handling ensures graceful degradation if MIDI device is unavailable
 
 ## Future Enhancements

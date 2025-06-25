@@ -8,6 +8,8 @@ Based on the nature-themed design for 1.8-year-old toddlers
 import json
 import time
 import threading
+import argparse
+import curses
 from typing import List, Optional
 import mido
 import pygame
@@ -730,6 +732,9 @@ class MusicalGarden:
         ## Toggle states for each pad (True = ON/playing, False = OFF/silent)
         self.pad_states = {}
         
+        ## TUI callback for activity logging
+        self._tui_callback = None
+        
         ## Load MIDI mappings
         self.load_midi_mappings()
     
@@ -1027,14 +1032,20 @@ class MusicalGarden:
                 self.active_sounds[note] = channel
                 self.pad_states[note] = True
                 element_name = self.get_element_name(sound_name)
-                print(f"🟢 {element_name} texture ON (looping)")
+                message = f"🟢 {element_name} texture ON (looping)"
+                print(message)
+                if self._tui_callback:
+                    self._tui_callback(message)
             else:
                 channel.play(sound)  # Play once
                 ## For melodic tones, we don't store the channel since they play once
                 ## But we still track the pad state for toggle behavior
                 self.pad_states[note] = True
                 element_name = self.get_element_name(sound_name)
-                print(f"🎵 {element_name} played")
+                message = f"🎵 {element_name} played"
+                print(message)
+                if self._tui_callback:
+                    self._tui_callback(message)
     
     def turn_pad_off(self, note: int):
         """Turn a pad OFF - different behavior for background vs melodic"""
@@ -1048,7 +1059,10 @@ class MusicalGarden:
                     channel.fadeout(300)  # Gentle fade out
                 del self.active_sounds[note]
             element_name = self.get_element_name(sound_name) if sound_name else "Unknown"
-            print(f"🔴 {element_name} texture OFF")
+            message = f"🔴 {element_name} texture OFF"
+            print(message)
+            if self._tui_callback:
+                self._tui_callback(message)
         else:
             ## Melodic tones: play the "off" variation for immediate response
             if sound_name and f"{sound_name}_off" in self.nature_sounds.sounds:
@@ -1061,10 +1075,16 @@ class MusicalGarden:
                     channel.play(off_sound)  # Play the "off" variation
                     
                 element_name = self.get_element_name(sound_name) if sound_name else "Unknown"
-                print(f"🎵 {element_name} (soft)")
+                message = f"🎵 {element_name} (soft)"
+                print(message)
+                if self._tui_callback:
+                    self._tui_callback(message)
             else:
                 element_name = self.get_element_name(sound_name) if sound_name else "Unknown"
-                print(f"🎵 {element_name} ready to play again")
+                message = f"🎵 {element_name} ready to play again"
+                print(message)
+                if self._tui_callback:
+                    self._tui_callback(message)
         
         self.pad_states[note] = False
     
@@ -1076,32 +1096,47 @@ class MusicalGarden:
         if control == 10:  # Volume knob
             self.master_volume = normalized_value
             volume_name = "🔇 Silent" if normalized_value < 0.1 else "🔈 Quiet" if normalized_value < 0.4 else "🔉 Medium" if normalized_value < 0.8 else "🔊 Loud"
-            print(f"🎚️ Master Volume: {volume_name}")
+            message = f"🎚️ Master Volume: {volume_name}"
+            print(message)
+            if self._tui_callback:
+                self._tui_callback(message)
             self._update_all_volumes()  # Apply to all active sounds
             
         ## Environmental controls - now affect audio in real-time!
         elif control == 16:  # K1 - Temperature (affects pitch)
             self.temperature = normalized_value
             temp_name = "❄️ Cold" if normalized_value < 0.3 else "🌞 Hot" if normalized_value > 0.7 else "🌤️ Warm"
-            print(f"🌡️ Temperature: {temp_name} (pitch {'-' if normalized_value < 0.5 else '+'})")
+            message = f"🌡️ Temperature: {temp_name}"
+            print(message)
+            if self._tui_callback:
+                self._tui_callback(message)
             self._update_all_audio_effects()
             
         elif control == 17:  # K2 - Water (affects reverb/echo)
             self.water = normalized_value
             water_name = "🌵 Dry" if normalized_value < 0.3 else "🌊 Flooding" if normalized_value > 0.7 else "🌱 Perfect"
-            print(f"💧 Water: {water_name} (echo {'minimal' if normalized_value < 0.3 else 'lots' if normalized_value > 0.7 else 'some'})")
+            message = f"💧 Water: {water_name}"
+            print(message)
+            if self._tui_callback:
+                self._tui_callback(message)
             self._update_all_audio_effects()
             
         elif control == 18:  # K3 - Time of Day (affects brightness/filtering)
             self.time_of_day = normalized_value
             time_name = "🌅 Dawn" if normalized_value < 0.3 else "🌆 Dusk" if normalized_value > 0.7 else "☀️ Noon"
-            print(f"🕐 Time: {time_name} (brightness {'dark' if normalized_value < 0.3 else 'bright' if normalized_value > 0.7 else 'medium'})")
+            message = f"🕐 Time: {time_name}"
+            print(message)
+            if self._tui_callback:
+                self._tui_callback(message)
             self._update_all_audio_effects()
             
         elif control == 7:   # Tempo - Seasons (affects character/timbre)
             self.seasons = normalized_value
             season_name = "❄️ Winter" if normalized_value < 0.25 else "🌸 Spring" if normalized_value < 0.5 else "☀️ Summer" if normalized_value < 0.75 else "🍂 Autumn"
-            print(f"🗓️ Season: {season_name} (character {'sparse' if normalized_value < 0.25 else 'fresh' if normalized_value < 0.5 else 'rich' if normalized_value < 0.75 else 'mellow'})")
+            message = f"🗓️ Season: {season_name}"
+            print(message)
+            if self._tui_callback:
+                self._tui_callback(message)
             self._update_all_audio_effects()
     
     def get_sound_name_for_note(self, note: int) -> Optional[str]:
@@ -1210,11 +1245,340 @@ class MusicalGarden:
         finally:
             self.stop_garden()
 
+class GardenMonitorTUI:
+    """Garden monitoring dashboard using curses for parent-friendly interface"""
+    
+    def __init__(self, garden: MusicalGarden):
+        self.garden = garden
+        self.running = False
+        self.stdscr = None
+        self.activity_log = []
+        self.max_log_entries = 5
+        
+    def start(self):
+        """Start the TUI interface"""
+        try:
+            curses.wrapper(self._run_tui)
+        except KeyboardInterrupt:
+            pass
+    
+    def _run_tui(self, stdscr):
+        """Main TUI loop"""
+        self.stdscr = stdscr
+        self.running = True
+        
+        ## Setup curses
+        curses.curs_set(0)  # Hide cursor
+        stdscr.nodelay(1)   # Non-blocking input
+        stdscr.timeout(100) # 100ms refresh rate
+        
+        ## Initialize colors if available
+        if curses.has_colors():
+            curses.start_color()
+            curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)   # ON state
+            curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)     # OFF state
+            curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)  # Headers
+            curses.init_pair(4, curses.COLOR_CYAN, curses.COLOR_BLACK)    # Activity
+        
+        ## Hook into garden's output
+        self.garden._tui_callback = self._add_activity
+        
+        ## Start garden in background
+        garden_thread = threading.Thread(target=self.garden.run, daemon=True)
+        garden_thread.start()
+        
+        ## Wait for garden to initialize
+        time.sleep(1)
+        
+        ## Main TUI loop
+        while self.running and self.garden.running:
+            try:
+                self._draw_interface()
+                self._handle_input()
+                time.sleep(0.1)
+            except Exception as e:
+                ## Graceful error handling
+                break
+        
+        ## Cleanup
+        self.running = False
+        self.garden.stop_garden()
+    
+    def _draw_interface(self):
+        """Draw the complete garden monitoring interface"""
+        self.stdscr.clear()
+        height, width = self.stdscr.getmaxyx()
+        
+        ## Ensure minimum terminal size
+        if height < 20 or width < 70:
+            self.stdscr.addstr(0, 0, "Terminal too small! Need at least 70x20")
+            self.stdscr.refresh()
+            return
+        
+        ## Draw border and title
+        self._draw_border()
+        self._draw_title()
+        
+        ## Draw main panels
+        self._draw_garden_elements(2, 2)
+        self._draw_environment(2, 35)
+        self._draw_melodic_notes(10, 2)
+        self._draw_activity_log(10, 35)
+        self._draw_commands(height - 2)
+        
+        self.stdscr.refresh()
+    
+    def _draw_border(self):
+        """Draw the outer border"""
+        height, width = self.stdscr.getmaxyx()
+        ## Simple ASCII border
+        for x in range(width - 1):
+            self.stdscr.addch(0, x, '─')
+            self.stdscr.addch(height - 3, x, '─')
+        for y in range(height - 2):
+            self.stdscr.addch(y, 0, '│')
+            self.stdscr.addch(y, width - 1, '│')
+        ## Corners
+        self.stdscr.addch(0, 0, '┌')
+        self.stdscr.addch(0, width - 1, '┐')
+        self.stdscr.addch(height - 3, 0, '└')
+        self.stdscr.addch(height - 3, width - 1, '┘')
+    
+    def _draw_title(self):
+        """Draw the title header"""
+        title = "🌸 Musical Garden Monitor"
+        self.stdscr.addstr(0, 2, title, curses.color_pair(3) if curses.has_colors() else 0)
+    
+    def _draw_garden_elements(self, start_y, start_x):
+        """Draw the big pads status panel"""
+        ## Panel title
+        self.stdscr.addstr(start_y, start_x, "┌─ Garden Elements", curses.color_pair(3) if curses.has_colors() else 0)
+        
+        elements = [
+            ('earth', '🌍 Earth'),
+            ('rain', '🌧️ Rain'),
+            ('wind', '💨 Wind'),
+            ('thunder', '⛈️ Thunder'),
+            ('trees', '🌳 Trees'),
+            ('birds', '🐦 Birds'),
+            ('insects', '🦗 Insects'),
+            ('sun', '☀️ Sun')
+        ]
+        
+        for i, (sound_key, display_name) in enumerate(elements):
+            y = start_y + 1 + i
+            ## Find the note for this sound
+            note = self._find_note_for_sound(sound_key)
+            is_on = self.garden.pad_states.get(note, False) if note else False
+            
+            status = "[🟢 ON ]" if is_on else "[⚫ OFF]"
+            color = curses.color_pair(1) if is_on else curses.color_pair(2)
+            
+            self.stdscr.addstr(y, start_x + 1, f"{display_name:<12}", 0)
+            self.stdscr.addstr(y, start_x + 14, status, color if curses.has_colors() else 0)
+        
+        ## Close panel
+        self.stdscr.addstr(start_y + len(elements) + 1, start_x, "└" + "─" * 25)
+    
+    def _draw_environment(self, start_y, start_x):
+        """Draw the environment controls panel"""
+        self.stdscr.addstr(start_y, start_x, "┌─ Environment", curses.color_pair(3) if curses.has_colors() else 0)
+        
+        ## Temperature
+        temp_desc = self._get_temp_description()
+        self.stdscr.addstr(start_y + 1, start_x + 1, f"🌡️ Temperature: {temp_desc}")
+        
+        ## Water
+        water_desc = self._get_water_description()
+        self.stdscr.addstr(start_y + 2, start_x + 1, f"💧 Water: {water_desc}")
+        
+        ## Time
+        time_desc = self._get_time_description()
+        self.stdscr.addstr(start_y + 3, start_x + 1, f"🕐 Time: {time_desc}")
+        
+        ## Season
+        season_desc = self._get_season_description()
+        self.stdscr.addstr(start_y + 4, start_x + 1, f"🗓️ Season: {season_desc}")
+        
+        ## Volume
+        volume_desc = self._get_volume_description()
+        self.stdscr.addstr(start_y + 5, start_x + 1, f"🎚️ Volume: {volume_desc}")
+        
+        self.stdscr.addstr(start_y + 6, start_x, "└" + "─" * 30)
+    
+    def _draw_melodic_notes(self, start_y, start_x):
+        """Draw the melodic notes status"""
+        self.stdscr.addstr(start_y, start_x, "┌─ Recent Melodies", curses.color_pair(3) if curses.has_colors() else 0)
+        
+        ## Show recent melodic activity
+        recent_melodies = [entry for entry in self.activity_log[-8:] if "played" in entry.lower()]
+        
+        for i, melody in enumerate(recent_melodies[-4:]):  # Show last 4
+            y = start_y + 1 + i
+            self.stdscr.addstr(y, start_x + 1, f"♪ {melody}")
+        
+        self.stdscr.addstr(start_y + 5, start_x, "└" + "─" * 30)
+    
+    def _draw_activity_log(self, start_y, start_x):
+        """Draw the activity log panel"""
+        self.stdscr.addstr(start_y, start_x, "┌─ Garden Activity", curses.color_pair(3) if curses.has_colors() else 0)
+        
+        ## Show recent activity
+        for i, activity in enumerate(self.activity_log[-5:]):
+            y = start_y + 1 + i
+            if y < start_y + 6:  # Don't overflow panel
+                self.stdscr.addstr(y, start_x + 1, activity[:30], curses.color_pair(4) if curses.has_colors() else 0)
+        
+        self.stdscr.addstr(start_y + 6, start_x, "└" + "─" * 32)
+    
+    def _draw_commands(self, y):
+        """Draw the command help line"""
+        commands = "🌸 [H]elp [R]eset [Q]uit [M]ute [C]lear"
+        self.stdscr.addstr(y, 2, commands, curses.color_pair(3) if curses.has_colors() else 0)
+    
+    def _handle_input(self):
+        """Handle keyboard input"""
+        try:
+            key = self.stdscr.getch()
+            if key == -1:  # No input
+                return
+            
+            key_char = chr(key).lower() if 32 <= key <= 126 else None
+            
+            if key_char == 'q':
+                self.running = False
+            elif key_char == 'r':
+                self._reset_garden()
+            elif key_char == 'm':
+                self._toggle_mute()
+            elif key_char == 'c':
+                self._clear_activity()
+            elif key_char == 'h':
+                self._show_help()
+        except:
+            pass  # Ignore input errors
+    
+    def _reset_garden(self):
+        """Reset all garden elements to OFF"""
+        for note in list(self.garden.pad_states.keys()):
+            if self.garden.pad_states[note] and self.garden.is_big_pad_note(note):
+                self.garden.turn_pad_off(note)
+        self._add_activity("🔄 Garden reset to silence")
+    
+    def _toggle_mute(self):
+        """Toggle master volume mute"""
+        if self.garden.master_volume > 0:
+            self.garden._previous_volume = self.garden.master_volume
+            self.garden.master_volume = 0
+            self._add_activity("🔇 Garden muted")
+        else:
+            self.garden.master_volume = getattr(self.garden, '_previous_volume', 0.5)
+            self._add_activity("🔊 Garden unmuted")
+        self.garden._update_all_volumes()
+    
+    def _clear_activity(self):
+        """Clear the activity log"""
+        self.activity_log.clear()
+        self._add_activity("📝 Activity log cleared")
+    
+    def _show_help(self):
+        """Show help overlay"""
+        height, width = self.stdscr.getmaxyx()
+        help_text = [
+            "🌸 Musical Garden Help",
+            "",
+            "Garden Elements: Background textures",
+            "- Toggle ON/OFF with big pads",
+            "- Layer multiple for rich soundscapes",
+            "",
+            "Melodic Notes: Harmonic melodies", 
+            "- Play over background textures",
+            "- Seeds → Sprouts → Buds → Flowers",
+            "",
+            "Commands:",
+            "  H - This help",
+            "  R - Reset all to silence",
+            "  Q - Quit garden",
+            "  M - Mute/unmute",
+            "  C - Clear activity log",
+            "",
+            "Press any key to continue..."
+        ]
+        
+        ## Create help overlay
+        overlay_y = 3
+        overlay_x = 5
+        overlay_height = len(help_text) + 2
+        overlay_width = max(len(line) for line in help_text) + 4
+        
+        ## Draw help box
+        for i in range(overlay_height):
+            self.stdscr.addstr(overlay_y + i, overlay_x, " " * overlay_width, curses.A_REVERSE)
+        
+        for i, line in enumerate(help_text):
+            self.stdscr.addstr(overlay_y + 1 + i, overlay_x + 2, line, curses.A_REVERSE)
+        
+        self.stdscr.refresh()
+        self.stdscr.getch()  # Wait for key press
+    
+    def _add_activity(self, message: str):
+        """Add activity to the log"""
+        self.activity_log.append(message)
+        if len(self.activity_log) > self.max_log_entries * 2:
+            self.activity_log = self.activity_log[-self.max_log_entries:]
+    
+    def _find_note_for_sound(self, sound_key: str) -> Optional[int]:
+        """Find MIDI note for a given sound"""
+        for note, sound_name in self.garden.note_to_sound.items():
+            if sound_name == sound_key:
+                return note
+        return None
+    
+    def _get_temp_description(self) -> str:
+        temp = self.garden.temperature
+        return "❄️ Cold" if temp < 0.3 else "🌞 Hot" if temp > 0.7 else "🌤️ Warm"
+    
+    def _get_water_description(self) -> str:
+        water = self.garden.water
+        return "🌵 Dry" if water < 0.3 else "🌊 Wet" if water > 0.7 else "🌱 Perfect"
+    
+    def _get_time_description(self) -> str:
+        time_val = self.garden.time_of_day
+        return "🌅 Dawn" if time_val < 0.3 else "🌆 Dusk" if time_val > 0.7 else "☀️ Day"
+    
+    def _get_season_description(self) -> str:
+        season = self.garden.seasons
+        if season < 0.25: return "❄️ Winter"
+        elif season < 0.5: return "🌸 Spring"
+        elif season < 0.75: return "☀️ Summer"
+        else: return "🍂 Autumn"
+    
+    def _get_volume_description(self) -> str:
+        vol = self.garden.master_volume
+        return "🔇 Silent" if vol < 0.1 else "🔈 Quiet" if vol < 0.4 else "🔉 Medium" if vol < 0.8 else "🔊 Loud"
+
 def main():
     """Main entry point"""
+    parser = argparse.ArgumentParser(description='SparkLE Musical Garden')
+    parser.add_argument('--tui', action='store_true', 
+                       help='Run with full-screen garden monitoring dashboard')
+    args = parser.parse_args()
+    
     try:
         garden = MusicalGarden()
-        garden.run()
+        
+        if args.tui:
+            ## Run with TUI interface
+            print("🌸 Starting Garden Monitor Dashboard...")
+            print("🖥️ Switching to full-screen mode...")
+            time.sleep(1)
+            
+            tui = GardenMonitorTUI(garden)
+            tui.start()
+        else:
+            ## Run with simple CLI interface
+            garden.run()
+            
     except Exception as e:
         print(f"❌ Error starting Musical Garden: {e}")
         print("Make sure pygame, mido and numpy are installed: pip install pygame mido numpy")
