@@ -515,16 +515,14 @@ class MusicalGarden:
             big_pad_sounds = ['earth', 'rain', 'wind', 'thunder', 'trees', 'birds', 'insects', 'sun']
             big_pads = self.midi_mappings['groups']['big_pads']
             
-            ## Group by note number and extract ON events
-            note_groups = {}
+            ## Extract ON events in the order they appear in JSON (preserves physical pad order)
+            on_events = []
             for pad in big_pads:
                 if pad['midi_type'] == 'note_on':
-                    note = pad['midi_note']
-                    note_groups[note] = pad
+                    on_events.append(pad['midi_note'])
             
-            ## Map to sounds based on order
-            sorted_notes = sorted(note_groups.keys())
-            for i, note in enumerate(sorted_notes):
+            ## Map to sounds based on JSON order (not sorted order)
+            for i, note in enumerate(on_events):
                 if i < len(big_pad_sounds):
                     self.note_to_sound[note] = big_pad_sounds[i]
         

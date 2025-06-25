@@ -9,16 +9,18 @@ This project contains two main applications for the Arturia SparkLE MIDI control
 
 ```
 midi-sparkle/
-├── README.md                       # Project overview and Mario Pipe documentation
+├── README.md                       # Project overview and Musical Garden documentation
 ├── STRUCTURE.md                    # This file - project organization
+├── SOUND-DESIGN.md                 # Comprehensive sound design documentation
 ├── requirements.txt                # Python dependencies
-├── sparkle_mapping.json           # MIDI controller mappings
-├── setup_mapping.py               # Tool to create/edit MIDI mappings
-├── toddler-sparkle-app-design.md  # Design specification for Musical Garden
 ├── sparkle_musical_garden.py      # Main Musical Garden application
 ├── arturia-sparkle-1280x762.jpg   # Controller reference image
+├── setup/
+│   ├── sparkle_mapping.json       # MIDI controller mappings
+│   └── setup_mapping.py           # Tool to create/edit MIDI mappings
 └── deprecated/
-    └── midi_monitor.py             # Original Mario Pipe monitor (deprecated)
+    ├── midi_monitor.py             # Original Mario Pipe monitor (deprecated)
+    └── toddler-sparkle-app-design.md # Design specification for Musical Garden
 ```
 
 ## Applications
@@ -28,10 +30,11 @@ midi-sparkle/
 **Features**:
 - Nature-themed sounds (Earth, Rain, Wind, Thunder, Trees, Birds, Insects, Sun)
 - Progressive musical complexity (Seeds → Sprouts → Buds → Flowers)
-- Environmental controls via knobs (Temperature, Water, Time of Day, Seasons)
+- Interactive knob controls (Master Volume + 4 environmental effects)
+- Real-time audio manipulation (Temperature→Pitch, Water→Echo, Time→Brightness, Seasons→Character)
 - Toddler-safe audio processing (volume limits, frequency range 200Hz-4kHz)
 - Opening and closing rituals for structured play sessions
-- Parent monitoring GUI with simple visual feedback
+- Command-line interface with simple text feedback
 
 **Key Classes**:
 - `AudioSynthesizer`: Generates natural-sounding audio
@@ -46,24 +49,32 @@ midi-sparkle/
 - Real-time button press visualization
 - 4x4 grid layout matching SparkLE number pads
 
+### 3. Design Documentation (`deprecated/toddler-sparkle-app-design.md`)
+**Purpose**: Original design specification for the Musical Garden
+**Status**: Moved to deprecated as implementation is complete
+**Content**: Detailed design philosophy and psychological considerations for toddler development
+
 ## Configuration Files
 
-### `sparkle_mapping.json`
+### `setup/sparkle_mapping.json`
 Contains MIDI mappings for the Arturia SparkLE controller:
 - **big_pads**: 8 large drum pads (MIDI notes 36-49)
 - **numbers**: 16 small numbered pads (MIDI notes 51-66)
-- **parameter_knobs**: 3 parameter knobs (K1-K3, CC 16-18)
-- **context_knobs**: 4 context knobs (Tempo, Volume, Divide, Move)
-- **presets**: 4 preset knobs (Bank, Pattern, Sequence, Tune)
-- **loop_controls**: 4 loop control knobs
-- **global_pads**: 6 global effect pads
-- **control_pads**: 7 control pads
+- **parameter_knobs**: 3 parameter knobs (K1-K3, CC 16-18) - **ACTIVE**: Environmental controls
+- **context_knobs**: 4 context knobs (Tempo, Volume, Divide, Move) - **VOLUME ACTIVE**: CC 10 master volume, CC 7 seasons
+- **presets**: 4 preset knobs (Bank, Pattern, Sequence, Tune) - Available for future features
+- **loop_controls**: 4 loop control knobs - Available for future features  
+- **global_pads**: 6 global effect pads - Available for future features
+- **control_pads**: 7 control pads - Available for future features
 
 ### `requirements.txt`
 Python dependencies:
 - `mido>=1.2.10` - MIDI I/O library
 - `pygame>=2.5.0` - Audio playback and synthesis
 - `numpy>=1.21.0` - Numerical operations for audio processing
+- `python-rtmidi>=1.4.0` - Real-time MIDI support
+
+
 
 ## Usage
 
@@ -79,7 +90,7 @@ python sparkle_musical_garden.py
 ### Setting up MIDI Mappings
 ```bash
 # Create or edit MIDI mappings
-python setup_mapping.py
+python setup/setup_mapping.py
 ```
 
 ## Design Philosophy
