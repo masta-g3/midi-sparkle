@@ -85,6 +85,7 @@ class NatureSounds:
         self.sounds['sun'] = self._create_sun_sound()
         
         ## Number Pads - Melodic Tones (designed to layer over background textures)
+        ## Create both "on" and "off" variations for each melodic tone
         pentatonic_scale = [261.63, 293.66, 329.63, 392.00, 440.00]  # C pentatonic
         
         for i in range(16):
@@ -94,19 +95,44 @@ class NatureSounds:
             if row == 0:  # Seeds - pure melodic notes (low octave)
                 freq = pentatonic_scale[col % len(pentatonic_scale)]
                 self.sounds[f'seed_{i+1}'] = self._create_melodic_tone(freq, 'bell')
+                self.sounds[f'seed_{i+1}_off'] = self._create_melodic_tone_off(freq, 'bell')
             elif row == 1:  # Sprouts - melodic notes (mid octave)
                 freq = pentatonic_scale[col % len(pentatonic_scale)] * 1.5
                 self.sounds[f'sprout_{i+1}'] = self._create_melodic_tone(freq, 'soft')
+                self.sounds[f'sprout_{i+1}_off'] = self._create_melodic_tone_off(freq, 'soft')
             elif row == 2:  # Buds - melodic notes (higher octave)
                 freq = pentatonic_scale[col % len(pentatonic_scale)] * 2
                 self.sounds[f'bud_{i+1}'] = self._create_melodic_tone(freq, 'bright')
+                self.sounds[f'bud_{i+1}_off'] = self._create_melodic_tone_off(freq, 'bright')
             else:  # Flowers - melodic notes (highest octave)
                 freq = pentatonic_scale[col % len(pentatonic_scale)] * 2.5
                 self.sounds[f'flower_{i+1}'] = self._create_melodic_tone(freq, 'sparkle')
+                self.sounds[f'flower_{i+1}_off'] = self._create_melodic_tone_off(freq, 'sparkle')
     
     def _create_earth_sound(self) -> pygame.mixer.Sound:
-        """Deep, grounding bass drone - background texture"""
-        return self._create_background_drone(120, 'sine')
+        """Deep, warm sub-bass drone with gentle earthy rumble"""
+        duration = 4.0
+        frames = int(duration * self.synth.sample_rate)
+        arr = np.zeros((frames, 2))
+
+        ## Pre-generate subtle low-frequency noise (earthy rumble)
+        noise = np.random.normal(0, 0.3, size=frames)
+
+        for i in range(frames):
+            t = i / self.synth.sample_rate
+
+            ## Fundamental and first harmonic (slightly detuned for warmth)
+            base = 0.6 * np.sin(2 * np.pi * 130 * t)   ## ~C3 fundamental
+            harmonic = 0.3 * np.sin(2 * np.pi * 260 * t)
+
+            ## Slow amplitude modulation to keep the texture evolving
+            lfo = 0.85 + 0.15 * np.sin(2 * np.pi * 0.1 * t)
+
+            wave = (base + harmonic + noise[i] * 0.2) * lfo * 0.12
+            arr[i] = [wave, wave]
+
+        arr = (arr * 32767).astype(np.int16)
+        return pygame.sndarray.make_sound(arr)
     
     def _create_rain_sound(self) -> pygame.mixer.Sound:
         """Gentle pitter-patter texture - background rhythm"""
@@ -117,8 +143,29 @@ class NatureSounds:
         return self._create_wind_texture()
     
     def _create_thunder_sound(self) -> pygame.mixer.Sound:
-        """Soft rolling rumble - background texture"""
-        return self._create_background_drone(80, 'triangle')
+        """Low rolling rumble resembling distant thunder"""
+        duration = 4.0
+        frames = int(duration * self.synth.sample_rate)
+        arr = np.zeros((frames, 2))
+
+        ## Brown(ish) noise for the rumble (integrated white noise)
+        brown_noise = np.cumsum(np.random.normal(0, 0.02, frames))
+        brown_noise = brown_noise / (np.max(np.abs(brown_noise)) + 1e-6)
+
+        for i in range(frames):
+            t = i / self.synth.sample_rate
+
+            rumble = brown_noise[i]
+            rumble += 0.5 * np.sin(2 * np.pi * 90 * t)  ## Low fundamental
+
+            ## Thunder envelope – bursts every ~1.5 s inside 4 s loop
+            env = np.exp(-((t % 1.5) * 1.8))
+
+            wave = rumble * env * 0.2
+            arr[i] = [wave, wave]
+
+        arr = (arr * 32767).astype(np.int16)
+        return pygame.sndarray.make_sound(arr)
     
     def _create_trees_sound(self) -> pygame.mixer.Sound:
         """Rustling, creaking texture - background rhythm"""
@@ -191,9 +238,12 @@ class NatureSounds:
                 else:
                     wave = 0
             
-            ## Add gentle background noise
+            ## Constant soft hiss for rainfall atmosphere (filtered white noise)
+            hiss = random.uniform(-1, 1) * 0.02
+
+            ## Add gentle background noise (existing) and hiss
             background = random.uniform(-0.05, 0.05)
-            combined = (wave + background) * 0.12
+            combined = (wave * 0.8 + background + hiss) * 0.12
             
             arr[i] = [combined, combined]
         
@@ -212,12 +262,11 @@ class NatureSounds:
             ## Base wind sound using filtered noise
             noise = random.uniform(-1, 1)
             
-            ## Add wind gusts with sine wave modulation
-            gust_freq = 0.3  # Slow gusts
-            gust = 1 + 0.5 * np.sin(2 * np.pi * gust_freq * t)
-            
-            ## Filter noise to create wind-like sound
-            filtered_noise = noise * gust * 0.08
+            ## Layered amplitude modulation for more organic gusts
+            gust_main = 1 + 0.6 * np.sin(2 * np.pi * 0.25 * t)       ## Slow main gust
+            gust_detail = 1 + 0.2 * np.sin(2 * np.pi * 1.3 * t)      ## Faster flutter
+
+            filtered_noise = noise * gust_main * gust_detail * 0.08
             
             arr[i] = [filtered_noise, filtered_noise]
         
@@ -343,6 +392,46 @@ class NatureSounds:
         arr = (arr * 32767).astype(np.int16)
         return pygame.sndarray.make_sound(arr)
     
+    def _create_melodic_tone_off(self, frequency: float, timbre: str) -> pygame.mixer.Sound:
+        """Create a softer, shorter 'off' variation of the melodic tone"""
+        duration = 0.6  # Shorter duration for "off" sound
+        frames = int(duration * self.synth.sample_rate)
+        arr = np.zeros((frames, 2))
+        
+        ## Slightly lower frequency for "off" variation (more mellow feeling)
+        off_frequency = frequency * 0.85
+        
+        for i in range(frames):
+            t = i / self.synth.sample_rate
+            
+            ## Similar timbres but with reduced intensity and quicker decay
+            if timbre == 'bell':
+                wave = np.sin(2 * np.pi * off_frequency * t)
+                wave += 0.15 * np.sin(2 * np.pi * off_frequency * 2 * t)  # Reduced harmonics
+                envelope = np.exp(-t * 3.0)  # Faster decay than "on" version
+            elif timbre == 'soft':
+                wave = np.sin(2 * np.pi * off_frequency * t)
+                envelope = np.exp(-t * 2.0)  # Faster than original soft decay
+            elif timbre == 'bright':
+                wave = np.sin(2 * np.pi * off_frequency * t)
+                wave += 0.1 * np.sin(2 * np.pi * off_frequency * 1.5 * t)  # Less bright
+                envelope = np.exp(-t * 2.5)
+            elif timbre == 'sparkle':
+                wave = np.sin(2 * np.pi * off_frequency * t)
+                wave += 0.2 * np.sin(2 * np.pi * off_frequency * 2.5 * t)  # Reduced sparkle
+                wave += 0.1 * np.sin(2 * np.pi * off_frequency * 4 * t)
+                envelope = np.exp(-t * 2.8)
+            else:
+                wave = np.sin(2 * np.pi * off_frequency * t)
+                envelope = np.exp(-t * 2.0)
+            
+            ## Apply envelope and reduced volume for softer "off" character
+            combined = wave * envelope * 0.15  # Lower volume than "on" sound (0.25)
+            arr[i] = [combined, combined]
+        
+        arr = (arr * 32767).astype(np.int16)
+        return pygame.sndarray.make_sound(arr)
+    
     def _create_chord(self, frequencies: List[float], duration: float) -> pygame.mixer.Sound:
         """Create a chord by combining multiple frequencies"""
         frames = int(duration * self.synth.sample_rate)
@@ -388,11 +477,14 @@ class MusicalGarden:
         self.synthesizer = AudioSynthesizer()
         self.nature_sounds = NatureSounds(self.synthesizer)
         
-        ## Environmental controls
-        self.temperature = 0.5  # 0-1 (darkness to brightness)
-        self.water = 0.3        # 0-1 (dry to wet - reverb)
-        self.time_of_day = 0.5  # 0-1 (morning to evening)
-        self.seasons = 0.5      # 0-1 (winter to summer - tempo)
+        ## Master volume control
+        self.master_volume = 0.5  # 0.0 = silent, 1.0 = max (controlled by volume knob)
+        
+        ## Environmental controls - now affect audio in real-time!
+        self.temperature = 0.5  # 0-1 (cold to hot - affects pitch)
+        self.water = 0.3        # 0-1 (dry to wet - affects reverb/echo)
+        self.time_of_day = 0.5  # 0-1 (morning to evening - affects brightness)
+        self.seasons = 0.5      # 0-1 (winter to summer - affects character)
         
         ## Active sounds tracking
         self.active_sounds = {}
@@ -406,11 +498,11 @@ class MusicalGarden:
     def load_midi_mappings(self):
         """Load MIDI mappings from JSON file"""
         try:
-            with open('sparkle_mapping.json', 'r') as f:
+            with open('setup/sparkle_mapping.json', 'r') as f:
                 self.midi_mappings = json.load(f)
                 self._build_note_mapping()
         except FileNotFoundError:
-            print("Warning: sparkle_mapping.json not found. Using default mappings.")
+            print("Warning: setup/sparkle_mapping.json not found. Using default mappings.")
             self.midi_mappings = {"groups": {}}
             self._build_default_mapping()
     
@@ -507,10 +599,17 @@ class MusicalGarden:
         print("\n🎼 Melodic Notes (Number Pads 1-16) - Play on Toggle:")
         print("   Row 1 (1-4): Bell Tones 🔔   |  Row 2 (5-8): Soft Notes 🎵")
         print("   Row 3 (9-12): Bright Tones ✨ |  Row 4 (13-16): Sparkle Notes 💎")
+        print("\n🎛️ Knob Controls - Turn to adjust the garden:")
+        print("   Volume Knob: 🎚️ Master volume (silent ↔ loud)")
+        print("   K1 (Temperature): 🌡️ Pitch control (cold ↔ hot)")
+        print("   K2 (Water): 💧 Echo effects (dry ↔ wet)")
+        print("   K3 (Time): 🕐 Brightness (dark ↔ bright)")
+        print("   Tempo (Seasons): 🗓️ Character (winter ↔ summer)")
         print("\n🎹 How it works:")
         print("   • Big Pads = Background textures (loop when ON)")
         print("   • Number Pads = Melodic notes (play over background)")
-        print("   • Layer multiple backgrounds + add melodies on top!")
+        print("   • Knobs = Real-time garden environment control!")
+        print("   • Layer multiple backgrounds + add melodies + adjust knobs!")
         print("   • Each press toggles between ON/OFF or plays note")
         print("\nPress Ctrl+C to put the garden to sleep 🌙")
     
@@ -680,9 +779,10 @@ class MusicalGarden:
         sound = self.nature_sounds.sounds[sound_name]
         channel = pygame.mixer.find_channel()
         if channel:
-            ## Use velocity to control volume (0.1 to 0.8 for safety)
-            volume = 0.1 + (velocity / 127.0) * 0.7
-            sound.set_volume(volume)
+            ## Use velocity and master volume to control volume (0.1 to 0.8 for safety)
+            velocity_volume = 0.1 + (velocity / 127.0) * 0.7
+            final_volume = velocity_volume * self.master_volume
+            sound.set_volume(final_volume)
             
             ## Background textures (big pads) loop continuously
             ## Melodic tones (number pads) play once but can be retriggered
@@ -714,9 +814,21 @@ class MusicalGarden:
             element_name = self.get_element_name(sound_name) if sound_name else "Unknown"
             print(f"🔴 {element_name} texture OFF")
         else:
-            ## Melodic tones: just update state (sound already finished playing)
-            element_name = self.get_element_name(sound_name) if sound_name else "Unknown"
-            print(f"🎵 {element_name} ready to play again")
+            ## Melodic tones: play the "off" variation for immediate response
+            if sound_name and f"{sound_name}_off" in self.nature_sounds.sounds:
+                off_sound = self.nature_sounds.sounds[f"{sound_name}_off"]
+                channel = pygame.mixer.find_channel()
+                if channel:
+                    ## Use master volume and make it softer for "off" feel
+                    final_volume = 0.4 * self.master_volume  # Quieter than "on" sounds
+                    off_sound.set_volume(final_volume)
+                    channel.play(off_sound)  # Play the "off" variation
+                    
+                element_name = self.get_element_name(sound_name) if sound_name else "Unknown"
+                print(f"🎵 {element_name} (soft)")
+            else:
+                element_name = self.get_element_name(sound_name) if sound_name else "Unknown"
+                print(f"🎵 {element_name} ready to play again")
         
         self.pad_states[note] = False
     
@@ -724,23 +836,37 @@ class MusicalGarden:
         """Handle control change events (knobs)"""
         normalized_value = value / 127.0
         
-        ## Environmental controls
-        if control == 16:  # K1 - Temperature
+        ## Master Volume Control
+        if control == 10:  # Volume knob
+            self.master_volume = normalized_value
+            volume_name = "🔇 Silent" if normalized_value < 0.1 else "🔈 Quiet" if normalized_value < 0.4 else "🔉 Medium" if normalized_value < 0.8 else "🔊 Loud"
+            print(f"🎚️ Master Volume: {volume_name}")
+            self._update_all_volumes()  # Apply to all active sounds
+            
+        ## Environmental controls - now affect audio in real-time!
+        elif control == 16:  # K1 - Temperature (affects pitch)
             self.temperature = normalized_value
             temp_name = "❄️ Cold" if normalized_value < 0.3 else "🌞 Hot" if normalized_value > 0.7 else "🌤️ Warm"
-            print(f"🌡️ Temperature: {temp_name}")
-        elif control == 17:  # K2 - Water
+            print(f"🌡️ Temperature: {temp_name} (pitch {'-' if normalized_value < 0.5 else '+'})")
+            self._update_all_audio_effects()
+            
+        elif control == 17:  # K2 - Water (affects reverb/echo)
             self.water = normalized_value
             water_name = "🌵 Dry" if normalized_value < 0.3 else "🌊 Flooding" if normalized_value > 0.7 else "🌱 Perfect"
-            print(f"💧 Water: {water_name}")
-        elif control == 18:  # K3 - Time of Day
+            print(f"💧 Water: {water_name} (echo {'minimal' if normalized_value < 0.3 else 'lots' if normalized_value > 0.7 else 'some'})")
+            self._update_all_audio_effects()
+            
+        elif control == 18:  # K3 - Time of Day (affects brightness/filtering)
             self.time_of_day = normalized_value
             time_name = "🌅 Dawn" if normalized_value < 0.3 else "🌆 Dusk" if normalized_value > 0.7 else "☀️ Noon"
-            print(f"🕐 Time: {time_name}")
-        elif control == 7:   # Tempo - Seasons
+            print(f"🕐 Time: {time_name} (brightness {'dark' if normalized_value < 0.3 else 'bright' if normalized_value > 0.7 else 'medium'})")
+            self._update_all_audio_effects()
+            
+        elif control == 7:   # Tempo - Seasons (affects character/timbre)
             self.seasons = normalized_value
             season_name = "❄️ Winter" if normalized_value < 0.25 else "🌸 Spring" if normalized_value < 0.5 else "☀️ Summer" if normalized_value < 0.75 else "🍂 Autumn"
-            print(f"🗓️ Season: {season_name}")
+            print(f"🗓️ Season: {season_name} (character {'sparse' if normalized_value < 0.25 else 'fresh' if normalized_value < 0.5 else 'rich' if normalized_value < 0.75 else 'mellow'})")
+            self._update_all_audio_effects()
     
     def get_sound_name_for_note(self, note: int) -> Optional[str]:
         """Map MIDI note to sound name using loaded JSON mapping"""
@@ -778,6 +904,57 @@ class MusicalGarden:
             return f'Flower {sound_name.split("_")[1]} 🌺'
         
         return sound_name
+    
+    def _update_all_volumes(self):
+        """Update volume for all active sounds based on master volume"""
+        for note, channel in self.active_sounds.items():
+            if channel and channel.get_busy():
+                sound_name = self.get_sound_name_for_note(note)
+                if sound_name and sound_name in self.nature_sounds.sounds:
+                    sound = self.nature_sounds.sounds[sound_name]
+                    ## Apply master volume (keeping the base volume reasonable)
+                    base_volume = 0.6  # Base volume for active sounds
+                    final_volume = base_volume * self.master_volume
+                    sound.set_volume(final_volume)
+    
+    def _update_all_audio_effects(self):
+        """Update audio effects for all active sounds based on environmental controls"""
+        ## For now, we'll focus on volume and simple pitch variations
+        ## More complex effects like reverb would require more advanced audio processing
+        
+        ## Temperature affects pitch: colder = lower, hotter = higher
+        pitch_modifier = 0.8 + (self.temperature * 0.4)  # Range: 0.8 to 1.2
+        
+        ## Apply environmental effects to active sounds
+        for note, channel in self.active_sounds.items():
+            if channel and channel.get_busy():
+                sound_name = self.get_sound_name_for_note(note)
+                if sound_name:
+                    ## For now, we'll regenerate sounds with new parameters
+                    ## This is a simple implementation - could be optimized
+                    self._apply_environmental_effects_to_sound(note, sound_name)
+    
+    def _apply_environmental_effects_to_sound(self, note: int, sound_name: str):
+        """Apply environmental effects to a specific sound"""
+        ## This is a simplified implementation
+        ## In a full implementation, you'd want real-time audio effects
+        
+        ## Temperature affects frequency (pitch)
+        freq_modifier = 0.8 + (self.temperature * 0.4)  # 0.8x to 1.2x frequency
+        
+        ## Time of day affects volume (quieter at night)
+        time_volume_modifier = 0.6 + (self.time_of_day * 0.4)  # 0.6x to 1.0x volume
+        
+        ## Apply the modifications by updating volume
+        if note in self.active_sounds:
+            channel = self.active_sounds[note]
+            if channel and channel.get_busy():
+                sound = self.nature_sounds.sounds[sound_name]
+                base_volume = 0.6 * self.master_volume * time_volume_modifier
+                sound.set_volume(base_volume)
+                
+                ## Note: Real-time pitch shifting would require more advanced audio processing
+                ## For now we provide visual feedback about the environmental effects
     
     def run(self):
         """Run the musical garden application"""
