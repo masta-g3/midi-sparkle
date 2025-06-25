@@ -6,6 +6,8 @@ A toddler-friendly musical playground for the Arturia SparkLE controller featuri
 
 The **SparkLE Musical Garden** is an audio-only musical experience designed specifically for 1.8-year-old toddlers. It transforms the Arturia SparkLE MIDI controller into a nature-themed musical playground that teaches cause-effect relationships, patterns, and emotional regulation through interactive sound design.
 
+<img src="arturia-var2.png" alt="Arturia SparkLE Controller" style="max-width:500px; width:100%;">
+
 ## ✨ Key Features
 
 - **🌍 Nature-Themed Sounds**: Earth, Rain, Wind, Thunder, Trees, Birds, Insects, and Sun
