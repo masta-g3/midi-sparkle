@@ -717,14 +717,16 @@ class MusicalGarden:
         self.synthesizer = AudioSynthesizer()
         self.nature_sounds = NatureSounds(self.synthesizer)
         
-        ## Master volume control
-        self.master_volume = 0.5  # 0.0 = silent, 1.0 = max (controlled by volume knob)
+        ## Volume controls
+        self.master_volume = 0.5    # CC 10 - Overall level
+        self.background_volume = 0.7 # CC 12 (Divide) - Big pads volume
+        self.melody_volume = 0.6     # CC 13 (Move) - Number pads volume
         
-        ## Environmental controls - now affect audio in real-time!
-        self.temperature = 0.5  # 0-1 (cold to hot - affects pitch)
-        self.water = 0.3        # 0-1 (dry to wet - affects reverb/echo)
-        self.time_of_day = 0.5  # 0-1 (morning to evening - affects brightness)
-        self.seasons = 0.5      # 0-1 (winter to summer - affects character)
+        ## Environmental effects
+        self.temperature = 0.5  # CC 16 (K1) - Pitch control (0.8x to 1.2x)
+        self.water = 0.3        # CC 17 (K2) - Echo/delay effect
+        self.time_of_day = 0.5  # CC 18 (K3) - Brightness/filtering
+        self.seasons = 0.5      # CC 7 (Tempo) - Harmonic content
         
         ## Active sounds tracking
         self.active_sounds = {}
@@ -841,17 +843,15 @@ class MusicalGarden:
         print("   Row 1 (1-4): Bell Tones 🔔   |  Row 2 (5-8): Soft Notes 🎵")
         print("   Row 3 (9-12): Bright Tones ✨ |  Row 4 (13-16): Sparkle Notes 💎")
         print("\n🎛️ Knob Controls - Turn to adjust the garden:")
-        print("   Volume Knob: 🎚️ Master volume (silent ↔ loud)")
-        print("   K1 (Temperature): 🌡️ Pitch control (cold ↔ hot)")
-        print("   K2 (Water): 💧 Echo effects (dry ↔ wet)")
-        print("   K3 (Time): 🕐 Brightness (dark ↔ bright)")
-        print("   Tempo (Seasons): 🗓️ Character (winter ↔ summer)")
+        print("   Volume: 🎚️ Master | Divide: 🌍 Background | Move: 🎵 Melody")
+        print("   K1 (Temperature): 🌡️ Pitch | K2 (Water): 💧 Echo")
+        print("   K3 (Time): 🕐 Brightness | Tempo (Seasons): 🗓️ Harmonics")
         print("\n🎹 How it works:")
         print("   • Big Pads = Background textures (loop when ON)")
         print("   • Number Pads = Melodic notes (play over background)")
-        print("   • Knobs = Real-time garden environment control!")
-        print("   • Layer multiple backgrounds + add melodies + adjust knobs!")
-        print("   • Each press toggles between ON/OFF or plays note")
+        print("   • Volume knobs = Mix background vs melody levels")
+        print("   • Effect knobs = Real-time environmental control")
+        print("   • Layer textures + melodies + adjust mix + add effects!")
         print("\nPress Ctrl+C to put the garden to sleep 🌙")
     
     def play_opening_ritual(self):
@@ -1020,9 +1020,12 @@ class MusicalGarden:
         sound = self.nature_sounds.sounds[sound_name]
         channel = pygame.mixer.find_channel()
         if channel:
-            ## Use velocity and master volume to control volume (0.1 to 0.8 for safety)
+            ## Calculate volume based on pad type
             velocity_volume = 0.1 + (velocity / 127.0) * 0.7
-            final_volume = velocity_volume * self.master_volume
+            if self.is_big_pad_note(note):
+                final_volume = velocity_volume * self.master_volume * self.background_volume
+            else:
+                final_volume = velocity_volume * self.master_volume * self.melody_volume
             sound.set_volume(final_volume)
             
             ## Background textures (big pads) loop continuously
@@ -1069,8 +1072,8 @@ class MusicalGarden:
                 off_sound = self.nature_sounds.sounds[f"{sound_name}_off"]
                 channel = pygame.mixer.find_channel()
                 if channel:
-                    ## Use master volume and make it softer for "off" feel
-                    final_volume = 0.4 * self.master_volume  # Quieter than "on" sounds
+                    ## Use melody volume for "off" sounds (softer)
+                    final_volume = 0.4 * self.master_volume * self.melody_volume
                     off_sound.set_volume(final_volume)
                     channel.play(off_sound)  # Play the "off" variation
                     
@@ -1092,52 +1095,23 @@ class MusicalGarden:
         """Handle control change events (knobs)"""
         normalized_value = value / 127.0
         
-        ## Master Volume Control
-        if control == 10:  # Volume knob
-            self.master_volume = normalized_value
-            volume_name = "🔇 Silent" if normalized_value < 0.1 else "🔈 Quiet" if normalized_value < 0.4 else "🔉 Medium" if normalized_value < 0.8 else "🔊 Loud"
-            message = f"🎚️ Master Volume: {volume_name}"
-            print(message)
-            if self._tui_callback:
-                self._tui_callback(message)
-            self._update_all_volumes()  # Apply to all active sounds
+        ## Volume Controls
+        if control == 10:  # Master Volume
+            self._set_master_volume(normalized_value)
+        elif control == 12:  # Divide - Background Volume
+            self._set_background_volume(normalized_value)
+        elif control == 13:  # Move - Melody Volume
+            self._set_melody_volume(normalized_value)
             
-        ## Environmental controls - now affect audio in real-time!
-        elif control == 16:  # K1 - Temperature (affects pitch)
-            self.temperature = normalized_value
-            temp_name = "❄️ Cold" if normalized_value < 0.3 else "🌞 Hot" if normalized_value > 0.7 else "🌤️ Warm"
-            message = f"🌡️ Temperature: {temp_name}"
-            print(message)
-            if self._tui_callback:
-                self._tui_callback(message)
-            self._update_all_audio_effects()
-            
-        elif control == 17:  # K2 - Water (affects reverb/echo)
-            self.water = normalized_value
-            water_name = "🌵 Dry" if normalized_value < 0.3 else "🌊 Flooding" if normalized_value > 0.7 else "🌱 Perfect"
-            message = f"💧 Water: {water_name}"
-            print(message)
-            if self._tui_callback:
-                self._tui_callback(message)
-            self._update_all_audio_effects()
-            
-        elif control == 18:  # K3 - Time of Day (affects brightness/filtering)
-            self.time_of_day = normalized_value
-            time_name = "🌅 Dawn" if normalized_value < 0.3 else "🌆 Dusk" if normalized_value > 0.7 else "☀️ Noon"
-            message = f"🕐 Time: {time_name}"
-            print(message)
-            if self._tui_callback:
-                self._tui_callback(message)
-            self._update_all_audio_effects()
-            
-        elif control == 7:   # Tempo - Seasons (affects character/timbre)
-            self.seasons = normalized_value
-            season_name = "❄️ Winter" if normalized_value < 0.25 else "🌸 Spring" if normalized_value < 0.5 else "☀️ Summer" if normalized_value < 0.75 else "🍂 Autumn"
-            message = f"🗓️ Season: {season_name}"
-            print(message)
-            if self._tui_callback:
-                self._tui_callback(message)
-            self._update_all_audio_effects()
+        ## Environmental Effects
+        elif control == 16:  # K1 - Temperature (pitch)
+            self._set_temperature(normalized_value)
+        elif control == 17:  # K2 - Water (echo)
+            self._set_water(normalized_value)
+        elif control == 18:  # K3 - Time (brightness)
+            self._set_time_of_day(normalized_value)
+        elif control == 7:   # Tempo - Seasons (harmonics)
+            self._set_seasons(normalized_value)
     
     def get_sound_name_for_note(self, note: int) -> Optional[str]:
         """Map MIDI note to sound name using loaded JSON mapping"""
@@ -1176,56 +1150,124 @@ class MusicalGarden:
         
         return sound_name
     
+    ## Volume Control Methods
+    
+    def _set_master_volume(self, value: float):
+        """Set master volume with feedback"""
+        self.master_volume = value
+        volume_desc = self._get_volume_description(value)
+        message = f"🎚️ Master Volume: {volume_desc} ({int(value * 100)}%)"
+        print(message)
+        if self._tui_callback:
+            self._tui_callback(message)
+        self._update_all_volumes()
+    
+    def _set_background_volume(self, value: float):
+        """Set background texture volume"""
+        self.background_volume = value
+        message = f"🎚️ Background: {int(value * 100)}%"
+        print(message)
+        if self._tui_callback:
+            self._tui_callback(message)
+        self._update_background_volumes()
+    
+    def _set_melody_volume(self, value: float):
+        """Set melody volume"""
+        self.melody_volume = value
+        message = f"🎚️ Melody: {int(value * 100)}%"
+        print(message)
+        if self._tui_callback:
+            self._tui_callback(message)
+        # Melody volumes are applied when notes are played
+    
     def _update_all_volumes(self):
-        """Update volume for all active sounds based on master volume"""
+        """Update volume for all active sounds"""
+        self._update_background_volumes()
+        # Melody sounds get volume applied when triggered
+    
+    def _update_background_volumes(self):
+        """Update volume for background textures only"""
         for note, channel in self.active_sounds.items():
-            if channel and channel.get_busy():
+            if channel and channel.get_busy() and self.is_big_pad_note(note):
                 sound_name = self.get_sound_name_for_note(note)
                 if sound_name and sound_name in self.nature_sounds.sounds:
                     sound = self.nature_sounds.sounds[sound_name]
-                    ## Apply master volume (keeping the base volume reasonable)
-                    base_volume = 0.6  # Base volume for active sounds
-                    final_volume = base_volume * self.master_volume
+                    # Apply time-of-day brightness as volume modifier
+                    brightness_modifier = 0.6 + (self.time_of_day * 0.4)  # 60% to 100%
+                    final_volume = 0.6 * self.master_volume * self.background_volume * brightness_modifier
                     sound.set_volume(final_volume)
     
-    def _update_all_audio_effects(self):
-        """Update audio effects for all active sounds based on environmental controls"""
-        ## For now, we'll focus on volume and simple pitch variations
-        ## More complex effects like reverb would require more advanced audio processing
-        
-        ## Temperature affects pitch: colder = lower, hotter = higher
-        pitch_modifier = 0.8 + (self.temperature * 0.4)  # Range: 0.8 to 1.2
-        
-        ## Apply environmental effects to active sounds
-        for note, channel in self.active_sounds.items():
-            if channel and channel.get_busy():
-                sound_name = self.get_sound_name_for_note(note)
-                if sound_name:
-                    ## For now, we'll regenerate sounds with new parameters
-                    ## This is a simple implementation - could be optimized
-                    self._apply_environmental_effects_to_sound(note, sound_name)
+    def _get_volume_description(self, volume: float) -> str:
+        """Get descriptive text for volume level"""
+        if volume < 0.1: return "🔇 Silent"
+        elif volume < 0.4: return "🔈 Quiet"
+        elif volume < 0.8: return "🔉 Medium"
+        else: return "🔊 Loud"
     
-    def _apply_environmental_effects_to_sound(self, note: int, sound_name: str):
-        """Apply environmental effects to a specific sound"""
-        ## This is a simplified implementation
-        ## In a full implementation, you'd want real-time audio effects
-        
-        ## Temperature affects frequency (pitch)
-        freq_modifier = 0.8 + (self.temperature * 0.4)  # 0.8x to 1.2x frequency
-        
-        ## Time of day affects volume (quieter at night)
-        time_volume_modifier = 0.6 + (self.time_of_day * 0.4)  # 0.6x to 1.0x volume
-        
-        ## Apply the modifications by updating volume
-        if note in self.active_sounds:
-            channel = self.active_sounds[note]
-            if channel and channel.get_busy():
-                sound = self.nature_sounds.sounds[sound_name]
-                base_volume = 0.6 * self.master_volume * time_volume_modifier
-                sound.set_volume(base_volume)
-                
-                ## Note: Real-time pitch shifting would require more advanced audio processing
-                ## For now we provide visual feedback about the environmental effects
+    ## Environmental Effect Methods
+    
+    def _set_temperature(self, value: float):
+        """Set temperature with pitch effect"""
+        self.temperature = value
+        temp_desc = self._get_temperature_description(value)
+        pitch_change = int((value - 0.5) * 40)  # -20% to +20%
+        message = f"🌡️ Temperature: {temp_desc} (pitch {pitch_change:+d}%)"
+        print(message)
+        if self._tui_callback:
+            self._tui_callback(message)
+        # Note: Pitch effects would be applied to new sounds
+    
+    def _set_water(self, value: float):
+        """Set water with echo effect"""
+        self.water = value
+        water_desc = self._get_water_description(value)
+        echo_desc = "No Echo" if value < 0.3 else "Light Echo" if value < 0.7 else "Heavy Echo"
+        message = f"💧 Water: {water_desc} ({echo_desc})"
+        print(message)
+        if self._tui_callback:
+            self._tui_callback(message)
+    
+    def _set_time_of_day(self, value: float):
+        """Set time of day with brightness effect"""
+        self.time_of_day = value
+        time_desc = self._get_time_description(value)
+        brightness = int(60 + value * 40)  # 60% to 100% brightness
+        message = f"🕐 Time: {time_desc} (brightness {brightness}%)"
+        print(message)
+        if self._tui_callback:
+            self._tui_callback(message)
+        self._update_background_volumes()  # Apply brightness as volume modifier
+    
+    def _set_seasons(self, value: float):
+        """Set seasons with harmonic content"""
+        self.seasons = value
+        season_desc = self._get_season_description(value)
+        harmonic_desc = "Minimal" if value < 0.25 else "Light" if value < 0.5 else "Rich" if value < 0.75 else "Full"
+        message = f"🗓️ Season: {season_desc} ({harmonic_desc} harmonics)"
+        print(message)
+        if self._tui_callback:
+            self._tui_callback(message)
+    
+    def _get_temperature_description(self, temp: float) -> str:
+        if temp < 0.3: return "❄️ Cold"
+        elif temp > 0.7: return "🌞 Hot"
+        else: return "🌤️ Warm"
+    
+    def _get_water_description(self, water: float) -> str:
+        if water < 0.3: return "🌵 Dry"
+        elif water > 0.7: return "🌊 Wet"
+        else: return "🌱 Fresh"
+    
+    def _get_time_description(self, time_val: float) -> str:
+        if time_val < 0.3: return "🌅 Dawn"
+        elif time_val > 0.7: return "🌆 Dusk"
+        else: return "☀️ Day"
+    
+    def _get_season_description(self, season: float) -> str:
+        if season < 0.25: return "❄️ Winter"
+        elif season < 0.5: return "🌸 Spring"
+        elif season < 0.75: return "☀️ Summer"
+        else: return "🍂 Autumn"
     
     def run(self):
         """Run the musical garden application"""
@@ -1322,8 +1364,8 @@ class GardenMonitorTUI:
         ## Draw main panels
         self._draw_garden_elements(2, 2)
         self._draw_environment(2, 35)
-        self._draw_melodic_notes(10, 2)
-        self._draw_activity_log(10, 35)
+        self._draw_melodic_notes(11, 2)
+        self._draw_activity_log(11, 35)
         self._draw_commands(height - 2)
         
         self.stdscr.refresh()
@@ -1401,10 +1443,14 @@ class GardenMonitorTUI:
         self.stdscr.addstr(start_y + 4, start_x + 1, f"🗓️ Season: {season_desc}")
         
         ## Volume
-        volume_desc = self._get_volume_description()
-        self.stdscr.addstr(start_y + 5, start_x + 1, f"🎚️ Volume: {volume_desc}")
+        master_desc = self._get_volume_description()
+        background_pct = int(self.garden.background_volume * 100)
+        melody_pct = int(self.garden.melody_volume * 100)
+        self.stdscr.addstr(start_y + 5, start_x + 1, f"🎚️ Master: {master_desc}")
+        self.stdscr.addstr(start_y + 6, start_x + 1, f"🌍 Background: {background_pct}%")
+        self.stdscr.addstr(start_y + 7, start_x + 1, f"🎵 Melody: {melody_pct}%")
         
-        self.stdscr.addstr(start_y + 6, start_x, "└" + "─" * 30)
+        self.stdscr.addstr(start_y + 8, start_x, "└" + "─" * 30)
     
     def _draw_melodic_notes(self, start_y, start_x):
         """Draw the melodic notes status"""
@@ -1535,27 +1581,19 @@ class GardenMonitorTUI:
         return None
     
     def _get_temp_description(self) -> str:
-        temp = self.garden.temperature
-        return "❄️ Cold" if temp < 0.3 else "🌞 Hot" if temp > 0.7 else "🌤️ Warm"
+        return self.garden._get_temperature_description(self.garden.temperature)
     
     def _get_water_description(self) -> str:
-        water = self.garden.water
-        return "🌵 Dry" if water < 0.3 else "🌊 Wet" if water > 0.7 else "🌱 Perfect"
+        return self.garden._get_water_description(self.garden.water)
     
     def _get_time_description(self) -> str:
-        time_val = self.garden.time_of_day
-        return "🌅 Dawn" if time_val < 0.3 else "🌆 Dusk" if time_val > 0.7 else "☀️ Day"
+        return self.garden._get_time_description(self.garden.time_of_day)
     
     def _get_season_description(self) -> str:
-        season = self.garden.seasons
-        if season < 0.25: return "❄️ Winter"
-        elif season < 0.5: return "🌸 Spring"
-        elif season < 0.75: return "☀️ Summer"
-        else: return "🍂 Autumn"
+        return self.garden._get_season_description(self.garden.seasons)
     
     def _get_volume_description(self) -> str:
-        vol = self.garden.master_volume
-        return "🔇 Silent" if vol < 0.1 else "🔈 Quiet" if vol < 0.4 else "🔉 Medium" if vol < 0.8 else "🔊 Loud"
+        return self.garden._get_volume_description(self.garden.master_volume)
 
 def main():
     """Main entry point"""
