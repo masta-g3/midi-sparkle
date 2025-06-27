@@ -14,6 +14,8 @@ midi-sparkle/
 ├── SOUND-DESIGN.md                 # Comprehensive sound design documentation
 ├── requirements.txt                # Python dependencies
 ├── sparkle_musical_garden.py      # Main Musical Garden application
+├── audio_synthesizer.py           # Core audio synthesis engine
+├── nature_sounds.py               # Nature-themed sound generation library
 ├── arturia-sparkle-1280x762.jpg   # Controller reference image
 ├── setup/
 │   ├── sparkle_mapping.json       # MIDI controller mappings
@@ -39,8 +41,8 @@ midi-sparkle/
   - Garden Monitor Dashboard with full-screen TUI (`--tui` flag)
 
 **Key Classes**:
-- `AudioSynthesizer`: Generates natural-sounding audio
-- `NatureSounds`: Collection of nature-themed sounds
+- `AudioSynthesizer` (`audio_synthesizer.py`): Generates natural-sounding audio
+- `NatureSounds` (`nature_sounds.py`): Collection of nature-themed sounds  
 - `MusicalGarden`: Main application controller
 - `GardenMonitorTUI`: Parent-friendly monitoring dashboard (curses-based)
 
@@ -86,11 +88,14 @@ Python dependencies:
 # Install dependencies
 pip install -r requirements.txt
 
-# Run with simple CLI interface (default)
+# Run with simple CLI interface (default - requires hardware)
 python sparkle_musical_garden.py
 
-# Run with Garden Monitor Dashboard (parent-friendly TUI)
+# Run with Garden Monitor Dashboard (parent-friendly TUI - requires hardware)
 python sparkle_musical_garden.py --tui
+
+# Run with Virtual SparkLE Controller (for testing without hardware)
+python sparkle_musical_garden.py --simulator
 ```
 
 ### Interface Modes
@@ -100,6 +105,7 @@ python sparkle_musical_garden.py --tui
 - Essential status messages and garden state updates
 - Perfect for headless operation or minimal distraction
 - All audio functionality and MIDI control unchanged
+- **Requires SparkLE MIDI controller hardware**
 
 #### Garden Monitor Dashboard (TUI Mode)
 - Full-screen curses-based monitoring interface
@@ -109,6 +115,24 @@ python sparkle_musical_garden.py --tui
 - Activity logging with recent melodies and garden interactions
 - Minimum terminal size: 70x20 characters
 - Uses built-in `curses` library - no additional dependencies
+- **Requires SparkLE MIDI controller hardware**
+
+#### Virtual Controller Mode (Simulator)
+- Full-screen virtual SparkLE controller interface
+- Keyboard-based input instead of MIDI hardware
+- Visual representation of all pads and knobs with real-time feedback
+- All garden functionality available without physical controller
+- Perfect for testing, development, or when hardware is unavailable
+- Includes integrated garden monitoring (combines TUI + controller simulation)
+- Minimum terminal size: 70x20 characters
+- **No MIDI hardware required**
+
+**Virtual Controller Keyboard Mapping:**
+- **Big Pads**: QWET (top row), ASDF (bottom row) - Garden Elements
+- **Number Pads**: 1234/5678/90-=/ZXCV (4x4 grid) - Melodic Tones  
+- **Environmental Knobs**: []/;',./, /\\ - Temperature, Water, Time, Seasons
+- **Volume Controls**: -=/jk/nm - Master, Background, Melody
+- **Commands**: H (help), R (reset), ESC (quit)
 
 ### Setting up MIDI Mappings
 ```bash
@@ -127,12 +151,16 @@ The Musical Garden follows these principles:
 
 ## Development Notes
 
+- **Modular Architecture**: Refactored into focused modules for maintainability
+  - `audio_synthesizer.py`: Core synthesis engine (independent)
+  - `nature_sounds.py`: Sound library (depends on AudioSynthesizer)
+  - `sparkle_musical_garden.py`: Main application (imports both modules)
 - Audio synthesis uses pentatonic scales to avoid dissonance
 - All sounds have soft attack/release envelopes for gentle experience
 - MIDI processing includes proper note_on/note_off handling
 - Threading is used for real-time MIDI monitoring and status updates
 - TUI interface uses built-in curses library for cross-platform terminal UI
-- Modular design: TUI wraps core logic without changing audio/MIDI functionality
+- Clean dependency chain enables testing and reuse of sound modules
 - Error handling ensures graceful degradation if MIDI device is unavailable
 
 ## Future Enhancements

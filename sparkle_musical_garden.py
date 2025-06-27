@@ -10,710 +10,20 @@ import time
 import threading
 import argparse
 import curses
-from typing import List, Optional
+from typing import Optional
 import mido
 import pygame
-import numpy as np
-import random
+from audio_synthesizer import AudioSynthesizer
+from nature_sounds import NatureSounds
 
-class AudioSynthesizer:
-    """Generates natural-sounding audio for the musical garden"""
-    
-    def __init__(self, sample_rate: int = 22050):
-        self.sample_rate = sample_rate
-        pygame.mixer.pre_init(frequency=sample_rate, size=-16, channels=2, buffer=512)
-        pygame.mixer.init()
-        
-    def generate_tone(self, frequency: float, duration: float, 
-                     wave_type: str = 'sine', envelope: str = 'soft') -> pygame.mixer.Sound:
-        """Generate a natural-sounding tone"""
-        frames = int(duration * self.sample_rate)
-        arr = np.zeros((frames, 2))
-        
-        for i in range(frames):
-            t = i / self.sample_rate
-            
-            ## Generate base waveform
-            if wave_type == 'sine':
-                wave = np.sin(2 * np.pi * frequency * t)
-            elif wave_type == 'triangle':
-                wave = 2 * np.arcsin(np.sin(2 * np.pi * frequency * t)) / np.pi
-            elif wave_type == 'sawtooth':
-                wave = 2 * (t * frequency - np.floor(t * frequency + 0.5))
-            elif wave_type == 'noise':
-                wave = random.uniform(-1, 1)
-            else:
-                wave = np.sin(2 * np.pi * frequency * t)
-            
-            ## Apply envelope for natural sound
-            if envelope == 'soft':
-                env = np.exp(-t * 2)  # Soft decay
-            elif envelope == 'sustain':
-                env = 1.0 if t < duration * 0.8 else np.exp(-(t - duration * 0.8) * 10)
-            else:
-                env = 1.0
-            
-            ## Apply frequency limits for toddler safety (200Hz-4kHz)
-            if frequency < 200:
-                frequency = 200
-            elif frequency > 4000:
-                frequency = 4000
-                
-            arr[i] = [wave * env * 0.3, wave * env * 0.3]  # Volume limit for safety
-        
-        ## Convert to pygame sound
-        arr = (arr * 32767).astype(np.int16)
-        return pygame.sndarray.make_sound(arr)
-
-class NatureSounds:
-    """Collection of nature-themed sounds for the musical garden"""
-    
-    def __init__(self, synthesizer: AudioSynthesizer):
-        self.synth = synthesizer
-        self.sounds = {}
-        self._generate_nature_sounds()
-    
-    def _generate_nature_sounds(self):
-        """Generate all nature-themed sounds"""
-        
-        ## Big Pads - Garden Elements (create looping versions)
-        self.sounds['earth'] = self._create_earth_sound()
-        self.sounds['rain'] = self._create_rain_sound()
-        self.sounds['wind'] = self._create_wind_sound()
-        self.sounds['thunder'] = self._create_thunder_sound()
-        self.sounds['trees'] = self._create_trees_sound()
-        self.sounds['birds'] = self._create_birds_sound()
-        self.sounds['insects'] = self._create_insects_sound()
-        self.sounds['sun'] = self._create_sun_sound()
-        
-        ## Number Pads - Melodic Tones (designed to layer over background textures)
-        ## Create both "on" and "off" variations for each melodic tone
-        pentatonic_scale = [261.63, 293.66, 329.63, 392.00, 440.00]  # C pentatonic
-        
-        for i in range(16):
-            row = i // 4
-            col = i % 4
-            
-            if row == 0:  # Seeds - pure melodic notes (low octave)
-                freq = pentatonic_scale[col % len(pentatonic_scale)]
-                self.sounds[f'seed_{i+1}'] = self._create_melodic_tone(freq, 'bell')
-                self.sounds[f'seed_{i+1}_off'] = self._create_melodic_tone_off(freq, 'bell')
-            elif row == 1:  # Sprouts - melodic notes (mid octave)
-                freq = pentatonic_scale[col % len(pentatonic_scale)] * 1.5
-                self.sounds[f'sprout_{i+1}'] = self._create_melodic_tone(freq, 'soft')
-                self.sounds[f'sprout_{i+1}_off'] = self._create_melodic_tone_off(freq, 'soft')
-            elif row == 2:  # Buds - melodic notes (higher octave)
-                freq = pentatonic_scale[col % len(pentatonic_scale)] * 2
-                self.sounds[f'bud_{i+1}'] = self._create_melodic_tone(freq, 'bright')
-                self.sounds[f'bud_{i+1}_off'] = self._create_melodic_tone_off(freq, 'bright')
-            else:  # Flowers - melodic notes (highest octave)
-                freq = pentatonic_scale[col % len(pentatonic_scale)] * 2.5
-                self.sounds[f'flower_{i+1}'] = self._create_melodic_tone(freq, 'sparkle')
-                self.sounds[f'flower_{i+1}_off'] = self._create_melodic_tone_off(freq, 'sparkle')
-    
-    def _create_earth_sound(self) -> pygame.mixer.Sound:
-        """Deep pentatonic bass foundation - musical grounding for all melodies"""
-        duration = 4.0
-        frames = int(duration * self.synth.sample_rate)
-        arr = np.zeros((frames, 2))
-
-        ## Pentatonic bass foundation: C2-G2-C3 perfect fifth intervals
-        c2_freq = 65.41    # C2 - deep fundamental
-        g2_freq = 98.00    # G2 - perfect fifth
-        c3_freq = 130.81   # C3 - octave
-
-        for i in range(frames):
-            t = i / self.synth.sample_rate
-
-            ## Three-layer bass foundation with harmonics
-            # C2 fundamental with warm harmonics
-            c2_fundamental = 0.7 * np.sin(2 * np.pi * c2_freq * t)
-            c2_harmonic2 = 0.25 * np.sin(2 * np.pi * c2_freq * 2 * t)  # Octave harmonic
-            c2_harmonic3 = 0.15 * np.sin(2 * np.pi * c2_freq * 3 * t)  # Fifth harmonic
-            
-            # G2 perfect fifth with subtle harmonics
-            g2_fundamental = 0.5 * np.sin(2 * np.pi * g2_freq * t)
-            g2_harmonic2 = 0.2 * np.sin(2 * np.pi * g2_freq * 2 * t)
-            
-            # C3 octave for clarity and definition
-            c3_fundamental = 0.4 * np.sin(2 * np.pi * c3_freq * t)
-            c3_harmonic2 = 0.15 * np.sin(2 * np.pi * c3_freq * 1.5 * t)  # Gentle fifth
-
-            ## Slow breathing modulation for organic feel (0.08Hz = 12.5 second cycle)
-            breathing_lfo = 0.82 + 0.18 * np.sin(2 * np.pi * 0.08 * t)
-            
-            ## Subtle pitch vibrato for warmth (very slow, 0.3Hz)
-            pitch_vibrato = 1 + 0.008 * np.sin(2 * np.pi * 0.3 * t)
-
-            ## Combine all layers
-            earth_bass = (
-                (c2_fundamental + c2_harmonic2 + c2_harmonic3) +
-                (g2_fundamental + g2_harmonic2) +
-                (c3_fundamental + c3_harmonic2)
-            ) * pitch_vibrato
-
-            ## Apply breathing modulation and gentle volume (increased by 10%)
-            wave = earth_bass * breathing_lfo * 0.154
-            arr[i] = [wave, wave]
-
-        arr = (arr * 32767).astype(np.int16)
-        return pygame.sndarray.make_sound(arr)
-    
-    def _create_rain_sound(self) -> pygame.mixer.Sound:
-        """Gentle pitter-patter texture - background rhythm"""
-        return self._create_rain_texture()
-    
-    def _create_wind_sound(self) -> pygame.mixer.Sound:
-        """Whooshing breathy texture - background atmosphere"""
-        return self._create_wind_texture()
-    
-    def _create_thunder_sound(self) -> pygame.mixer.Sound:
-        """Deep pentatonic bass strikes with dramatic musical decay"""
-        duration = 4.0
-        frames = int(duration * self.synth.sample_rate)
-        arr = np.zeros((frames, 2))
-
-        ## Ultra-deep pentatonic bass frequencies for thunder power
-        c1_freq = 32.70    # C1 - deepest foundation (below audible, felt)
-        g1_freq = 49.00    # G1 - perfect fifth
-        c2_freq = 65.41    # C2 - octave up for clarity
-        
-        ## Thunder strike timing (aligned to 4-second loop with proper decay)
-        strike_times = [0.3, 2.2]  # Two powerful strikes with room for decay
-        
-        for i in range(frames):
-            t = i / self.synth.sample_rate
-            wave = 0.0
-            
-            ## Check if we're near any thunder strike times
-            for strike_time in strike_times:
-                time_from_strike = t - strike_time
-                
-                if 0 <= time_from_strike <= 1.8:  # Strike duration window (fits in loop)
-                    ## Powerful bass strike with rich harmonics
-                    # C1 ultra-deep foundation
-                    c1_fundamental = 0.8 * np.sin(2 * np.pi * c1_freq * t)
-                    c1_harmonic2 = 0.4 * np.sin(2 * np.pi * c1_freq * 2 * t)    # Octave
-                    c1_harmonic3 = 0.2 * np.sin(2 * np.pi * c1_freq * 3 * t)    # Fifth
-                    
-                    # G1 perfect fifth for power
-                    g1_fundamental = 0.6 * np.sin(2 * np.pi * g1_freq * t)
-                    g1_harmonic2 = 0.3 * np.sin(2 * np.pi * g1_freq * 2 * t)
-                    
-                    # C2 octave for definition and punch
-                    c2_fundamental = 0.5 * np.sin(2 * np.pi * c2_freq * t)
-                    c2_harmonic2 = 0.25 * np.sin(2 * np.pi * c2_freq * 1.5 * t)  # Fifth
-                    c2_harmonic3 = 0.15 * np.sin(2 * np.pi * c2_freq * 2.5 * t)  # Higher harmonic
-                    
-                    ## Dramatic thunder envelope - fast attack, long musical decay
-                    if time_from_strike < 0.05:  # Very fast attack (50ms)
-                        envelope = time_from_strike * 20  # Quick strike
-                    else:  # Long, musical decay
-                        envelope = np.exp(-(time_from_strike - 0.05) * 1.2)  # Slower than original
-                    
-                    ## Combine all bass layers
-                    thunder_bass = (
-                        (c1_fundamental + c1_harmonic2 + c1_harmonic3) +
-                        (g1_fundamental + g1_harmonic2) +
-                        (c2_fundamental + c2_harmonic2 + c2_harmonic3)
-                    )
-                    
-                    wave += thunder_bass * envelope
-            
-            ## Apply overall volume (increased for dramatic effect)
-            final_wave = wave * 0.22
-            arr[i] = [final_wave, final_wave]
-
-        arr = (arr * 32767).astype(np.int16)
-        return pygame.sndarray.make_sound(arr)
-    
-    def _create_trees_sound(self) -> pygame.mixer.Sound:
-        """Rustling, creaking texture - background rhythm"""
-        return self._create_trees_texture()
-    
-    def _create_birds_sound(self) -> pygame.mixer.Sound:
-        """Ambient chirping texture - background atmosphere"""
-        return self._create_birds_texture()
-    
-    def _create_insects_sound(self) -> pygame.mixer.Sound:
-        """Buzzing, clicking texture - background rhythm"""
-        return self._create_insects_texture()
-    
-    def _create_sun_sound(self) -> pygame.mixer.Sound:
-        """Warm harmonic drone - background atmosphere"""
-        return self._create_background_drone(200, 'sine', harmonics=True)
-    
-    
-    
-    def _create_background_drone(self, frequency: float, wave_type: str, harmonics: bool = False) -> pygame.mixer.Sound:
-        """Create a continuous background drone texture"""
-        duration = 4.0
-        frames = int(duration * self.synth.sample_rate)
-        arr = np.zeros((frames, 2))
-        
-        for i in range(frames):
-            t = i / self.synth.sample_rate
-            
-            if wave_type == 'sine':
-                wave = np.sin(2 * np.pi * frequency * t)
-                if harmonics:
-                    ## Add harmonic richness for sun
-                    wave += 0.3 * np.sin(2 * np.pi * frequency * 1.5 * t)
-                    wave += 0.2 * np.sin(2 * np.pi * frequency * 2 * t)
-            elif wave_type == 'triangle':
-                wave = 2 * np.arcsin(np.sin(2 * np.pi * frequency * t)) / np.pi
-            else:
-                wave = np.sin(2 * np.pi * frequency * t)
-            
-            ## Add subtle modulation for natural feel
-            modulation = 1 + 0.1 * np.sin(2 * np.pi * 0.5 * t)  # Slow LFO
-            wave = wave * modulation * 0.15  # Lower volume for background
-            
-            arr[i] = [wave, wave]
-        
-        arr = (arr * 32767).astype(np.int16)
-        return pygame.sndarray.make_sound(arr)
-    
-    def _create_rain_texture(self) -> pygame.mixer.Sound:
-        """Create rhythmic pentatonic arpeggios suggesting gentle raindrops"""
-        duration = 4.0
-        frames = int(duration * self.synth.sample_rate)
-        arr = np.zeros((frames, 2))
-        
-        ## Pentatonic frequencies for rain arpeggios (high register sparkle layer)
-        e5_freq = 659.25   # E5 - bright sparkle
-        a5_freq = 880.00   # A5 - perfect fourth above E5
-        e6_freq = 1318.51  # E6 - octave above E5
-        
-        ## Musical pattern: 8th notes at 120 BPM = 0.25s per 8th note
-        eighth_note_duration = 0.25
-        
-        for i in range(frames):
-            t = i / self.synth.sample_rate
-            wave = 0.0
-            
-            ## Calculate current 8th note position in the 4-second loop
-            note_position = (t % duration) / eighth_note_duration
-            note_index = int(note_position) % 16  # 16 eighth notes in 4 seconds
-            note_time = (t % eighth_note_duration) / eighth_note_duration
-            
-            ## Musical rain patterns (varied arpeggio sequences)
-            # Pattern 1: E5-A5-E6 ascending (beats 1-3)
-            # Pattern 2: A5-E5 gentle (beats 5-6)  
-            # Pattern 3: E6-A5-E5 descending (beats 9-11)
-            # Rests and variations for organic feel
-            
-            rain_freq = None
-            if note_index in [0, 2, 4]:      # E5-A5-E6 ascending
-                rain_freq = [e5_freq, a5_freq, e6_freq][note_index // 2]
-            elif note_index in [8, 9]:       # A5-E5 gentle
-                rain_freq = [a5_freq, e5_freq][(note_index - 8)]
-            elif note_index in [12, 13, 14]: # E6-A5-E5 descending
-                rain_freq = [e6_freq, a5_freq, e5_freq][(note_index - 12)]
-            # Other positions are rests for natural breathing
-            
-            if rain_freq is not None:
-                ## Soft droplet envelope - quick attack, gentle decay
-                if note_time < 0.1:  # Attack phase
-                    envelope = note_time * 10  # Quick attack
-                else:  # Decay phase
-                    envelope = np.exp(-(note_time - 0.1) * 6)  # Gentle decay
-                
-                ## Generate pure sine wave droplet
-                wave = np.sin(2 * np.pi * rain_freq * t) * envelope
-                
-                ## Add subtle harmonic for sparkle (very quiet)
-                harmonic = 0.15 * np.sin(2 * np.pi * rain_freq * 1.5 * t) * envelope
-                wave += harmonic
-            
-            ## Apply gentle volume for background texture
-            combined = wave * 0.08
-            arr[i] = [combined, combined]
-        
-        arr = (arr * 32767).astype(np.int16)
-        return pygame.sndarray.make_sound(arr)
-    
-    def _create_wind_texture(self) -> pygame.mixer.Sound:
-        """Create sustained pentatonic chords with breathing wind-like swells"""
-        duration = 4.0
-        frames = int(duration * self.synth.sample_rate)
-        arr = np.zeros((frames, 2))
-        
-        ## Pentatonic chord for wind (mid-register harmonic support)
-        d4_freq = 293.66   # D4 - gentle foundation
-        g4_freq = 392.00   # G4 - perfect fourth above D4
-        a4_freq = 440.00   # A4 - perfect fifth above D4 (completing triad)
-        
-        for i in range(frames):
-            t = i / self.synth.sample_rate
-            
-            ## Three-part pentatonic chord with rich harmonics
-            # D4 foundation with warm harmonics
-            d4_fundamental = 0.6 * np.sin(2 * np.pi * d4_freq * t)
-            d4_harmonic2 = 0.2 * np.sin(2 * np.pi * d4_freq * 1.5 * t)  # Fifth harmonic
-            d4_harmonic3 = 0.1 * np.sin(2 * np.pi * d4_freq * 2 * t)    # Octave harmonic
-            
-            # G4 middle voice with subtle harmonics
-            g4_fundamental = 0.5 * np.sin(2 * np.pi * g4_freq * t)
-            g4_harmonic2 = 0.15 * np.sin(2 * np.pi * g4_freq * 1.25 * t)  # Quarter harmonic
-            
-            # A4 top voice for brightness
-            a4_fundamental = 0.45 * np.sin(2 * np.pi * a4_freq * t)
-            a4_harmonic2 = 0.12 * np.sin(2 * np.pi * a4_freq * 0.75 * t)  # Sub-harmonic for warmth
-            
-            ## Wind-like breathing modulation (aligned to 4-second loop)
-            main_gust = 0.4 + 0.6 * np.sin(2 * np.pi * 0.25 * t)      # 4s cycle main swell
-            detail_flutter = 1 + 0.15 * np.sin(2 * np.pi * 1.0 * t)   # 1s detail flutter
-            
-            ## Gentle pitch modulation for organic feel (very subtle, loop-aligned)
-            pitch_sway = 1 + 0.005 * np.sin(2 * np.pi * 0.5 * t)      # 2s cycle
-            
-            ## Combine all chord voices
-            wind_chord = (
-                (d4_fundamental + d4_harmonic2 + d4_harmonic3) +
-                (g4_fundamental + g4_harmonic2) +
-                (a4_fundamental + a4_harmonic2)
-            ) * pitch_sway
-            
-            ## Apply wind-like breathing modulation
-            wave = wind_chord * main_gust * detail_flutter * 0.09
-            arr[i] = [wave, wave]
-        
-        arr = (arr * 32767).astype(np.int16)
-        return pygame.sndarray.make_sound(arr)
-    
-    def _create_trees_texture(self) -> pygame.mixer.Sound:
-        """Create organic rhythmic percussion - like wooden blocks/rimshots"""
-        duration = 4.0
-        frames = int(duration * self.synth.sample_rate)
-        arr = np.zeros((frames, 2))
-        
-        ## Pentatonic percussion frequencies (mid-register)
-        g3_freq = 196.00   # G3 - woody fundamental
-        d4_freq = 293.66   # D4 - brighter accent
-        
-        ## Rhythmic pattern: 16th note subdivision (0.25s each) in 4-second loop
-        sixteenth_duration = 0.25
-        
-        ## Syncopated groove pattern for 16 positions (4 beats × 4 sixteenths)
-        ## X = strong hit, x = light hit, . = rest
-        ## Beat 1: X.x.  Beat 2: .x..  Beat 3: X..x  Beat 4: ..x.
-        hit_pattern = [
-            (0, 'strong'),   # Beat 1.1 - downbeat
-            (2, 'light'),    # Beat 1.3 - syncopated
-            (5, 'medium'),   # Beat 2.2 - offbeat
-            (8, 'strong'),   # Beat 3.1 - downbeat  
-            (11, 'light'),   # Beat 3.4 - syncopated
-            (14, 'medium')   # Beat 4.3 - offbeat accent
-        ]
-        
-        for i in range(frames):
-            t = i / self.synth.sample_rate
-            wave = 0.0
-            
-            ## Calculate current 16th note position
-            note_position = (t % duration) / sixteenth_duration
-            note_index = int(note_position)
-            note_time = (note_position % 1.0) * sixteenth_duration
-            
-            ## Check if this position should have a percussion hit
-            for hit_pos, hit_type in hit_pattern:
-                if note_index == hit_pos and note_time < 0.15:  # Hit window
-                    
-                    ## Choose frequency based on hit type
-                    if hit_type == 'strong':
-                        perc_freq = d4_freq  # Brighter for strong hits
-                        volume_mult = 1.0
-                    elif hit_type == 'medium':
-                        perc_freq = g3_freq  # Woody for medium hits
-                        volume_mult = 0.7
-                    else:  # light
-                        perc_freq = g3_freq  # Woody for light hits
-                        volume_mult = 0.4
-                    
-                    ## Percussive envelope - very fast attack, quick decay
-                    if note_time < 0.01:  # Attack phase (10ms)
-                        envelope = note_time * 100  # Very fast attack
-                    else:  # Decay phase
-                        envelope = np.exp(-(note_time - 0.01) * 12)  # Quick decay
-                    
-                    ## Generate woody percussion tone
-                    fundamental = np.sin(2 * np.pi * perc_freq * t)
-                    ## Add slight harmonic for wooden character
-                    harmonic = 0.3 * np.sin(2 * np.pi * perc_freq * 1.5 * t)
-                    ## Add subtle click for percussive attack
-                    click = 0.2 * np.sin(2 * np.pi * perc_freq * 3 * t) if note_time < 0.005 else 0
-                    
-                    wave += (fundamental + harmonic + click) * envelope * volume_mult
-            
-            ## Apply gentle overall volume for rhythmic layer
-            combined = wave * 0.12
-            arr[i] = [combined, combined]
-        
-        arr = (arr * 32767).astype(np.int16)
-        return pygame.sndarray.make_sound(arr)
-    
-    def _create_birds_texture(self) -> pygame.mixer.Sound:
-        """Create an ambient bird texture"""
-        duration = 4.0
-        frames = int(duration * self.synth.sample_rate)
-        arr = np.zeros((frames, 2))
-        
-        ## Create gentle ambient bird calls
-        bird_times = [0.5, 1.8, 3.2]  # When birds chirp
-        
-        for i in range(frames):
-            t = i / self.synth.sample_rate
-            wave = 0
-            
-            ## Check if we're near a bird call time
-            for bird_time in bird_times:
-                if abs(t - bird_time) < 0.3:  # 0.3 second window
-                    local_t = t - bird_time + 0.3
-                    if local_t >= 0:
-                        bird_freq = 1200 + 200 * np.sin(2 * np.pi * 8 * local_t)  # Warbling
-                        wave += np.sin(2 * np.pi * bird_freq * local_t) * np.exp(-local_t * 3)
-            
-            wave = wave * 0.08
-            arr[i] = [wave, wave]
-        
-        arr = (arr * 32767).astype(np.int16)
-        return pygame.sndarray.make_sound(arr)
-    
-    def _create_insects_texture(self) -> pygame.mixer.Sound:
-        """Create high-frequency rhythmic texture - like hi-hats/shakers"""
-        duration = 4.0
-        frames = int(duration * self.synth.sample_rate)
-        arr = np.zeros((frames, 2))
-        
-        ## High pentatonic frequencies for crisp rhythmic texture
-        a5_freq = 880.00    # A5 - bright fundamental
-        e6_freq = 1318.51   # E6 - sparkling accent
-        
-        ## Hi-hat style rhythmic pattern: 16th note subdivision (0.25s each)
-        sixteenth_duration = 0.25
-        
-        ## Hi-hat pattern complementing Trees percussion - more frequent, lighter
-        ## o = open/accent, c = closed/light, . = rest
-        ## Beat 1: c.o.  Beat 2: c.c.  Beat 3: c.o.  Beat 4: c.c.
-        hihat_pattern = [
-            (0, 'closed'),   # Beat 1.1 - closed hihat
-            (2, 'open'),     # Beat 1.3 - open accent
-            (4, 'closed'),   # Beat 2.1 - closed hihat
-            (6, 'closed'),   # Beat 2.3 - closed hihat
-            (8, 'closed'),   # Beat 3.1 - closed hihat
-            (10, 'open'),    # Beat 3.3 - open accent
-            (12, 'closed'),  # Beat 4.1 - closed hihat
-            (14, 'closed'),  # Beat 4.3 - closed hihat
-            (1, 'ghost'),    # Ghost notes for groove
-            (3, 'ghost'),
-            (9, 'ghost'),
-            (13, 'ghost')
-        ]
-        
-        for i in range(frames):
-            t = i / self.synth.sample_rate
-            wave = 0.0
-            
-            ## Calculate current 16th note position
-            note_position = (t % duration) / sixteenth_duration
-            note_index = int(note_position)
-            note_time = (note_position % 1.0) * sixteenth_duration
-            
-            ## Check if this position should have a hi-hat hit
-            for hit_pos, hit_type in hihat_pattern:
-                if note_index == hit_pos and note_time < 0.08:  # Short hi-hat window
-                    
-                    ## Choose frequency and character based on hit type
-                    if hit_type == 'open':
-                        hihat_freq = e6_freq  # Higher for open hi-hat
-                        volume_mult = 0.8
-                        decay_rate = 8  # Slower decay for "open" feel
-                    elif hit_type == 'closed':
-                        hihat_freq = a5_freq  # Lower for closed hi-hat
-                        volume_mult = 0.6
-                        decay_rate = 15  # Faster decay for "closed" feel
-                    else:  # ghost
-                        hihat_freq = a5_freq  # Subtle ghost notes
-                        volume_mult = 0.25
-                        decay_rate = 20  # Very fast decay
-                    
-                    ## Very fast percussive envelope for crisp hi-hat character
-                    if note_time < 0.002:  # Ultra-fast attack (2ms)
-                        envelope = note_time * 500  # Instant attack
-                    else:  # Quick decay
-                        envelope = np.exp(-(note_time - 0.002) * decay_rate)
-                    
-                    ## Generate crisp hi-hat tone
-                    fundamental = np.sin(2 * np.pi * hihat_freq * t)
-                    ## Add sparkle harmonics for crisp character
-                    harmonic2 = 0.4 * np.sin(2 * np.pi * hihat_freq * 1.3 * t)
-                    harmonic3 = 0.2 * np.sin(2 * np.pi * hihat_freq * 1.7 * t)
-                    ## Add tiny bit of higher frequency "sizzle"
-                    sizzle = 0.1 * np.sin(2 * np.pi * hihat_freq * 2.1 * t)
-                    
-                    wave += (fundamental + harmonic2 + harmonic3 + sizzle) * envelope * volume_mult
-            
-            ## Apply gentle overall volume for high-frequency texture
-            combined = wave * 0.09
-            arr[i] = [combined, combined]
-        
-        arr = (arr * 32767).astype(np.int16)
-        return pygame.sndarray.make_sound(arr)
-    
-    def _create_melodic_tone(self, frequency: float, timbre: str) -> pygame.mixer.Sound:
-        """Create punchy melodic tones that articulate clearly over sustained backgrounds"""
-        duration = 0.7  # Shorter and punchier for better separation
-        frames = int(duration * self.synth.sample_rate)
-        arr = np.zeros((frames, 2))
-        
-        for i in range(frames):
-            t = i / self.synth.sample_rate
-            
-            ## Quick attack for punchier feel (20ms attack across all timbres)
-            attack_time = 0.02
-            if t < attack_time:
-                attack_env = t / attack_time  # Linear attack
-            else:
-                attack_env = 1.0
-            
-            if timbre == 'bell':
-                ## Bell-like with harmonics
-                wave = np.sin(2 * np.pi * frequency * t)
-                wave += 0.3 * np.sin(2 * np.pi * frequency * 2 * t)
-                wave += 0.1 * np.sin(2 * np.pi * frequency * 3 * t)
-                decay_env = np.exp(-t * 1.8)  # Balanced for punch but natural fade
-            elif timbre == 'soft':
-                ## Soft sine wave but still punchy
-                wave = np.sin(2 * np.pi * frequency * t)
-                decay_env = np.exp(-t * 1.2)  # Gentler decay
-            elif timbre == 'bright':
-                ## Brighter with slight harmonics
-                wave = np.sin(2 * np.pi * frequency * t)
-                wave += 0.2 * np.sin(2 * np.pi * frequency * 1.5 * t)
-                decay_env = np.exp(-t * 1.4)  # More natural decay
-            elif timbre == 'sparkle':
-                ## Sparkling with higher harmonics
-                wave = np.sin(2 * np.pi * frequency * t)
-                wave += 0.4 * np.sin(2 * np.pi * frequency * 2.5 * t)
-                wave += 0.2 * np.sin(2 * np.pi * frequency * 4 * t)
-                decay_env = np.exp(-t * 1.6)  # Natural sparkle fade
-            else:
-                wave = np.sin(2 * np.pi * frequency * t)
-                decay_env = np.exp(-t * 1.3)
-            
-            ## Add final fade-out to prevent cutoffs (last 0.1s)
-            fade_out_time = 0.1
-            if t > (duration - fade_out_time):
-                fade_out_env = (duration - t) / fade_out_time  # Linear fade to silence
-            else:
-                fade_out_env = 1.0
-            
-            ## Combine attack, decay, and fade-out envelopes
-            envelope = attack_env * decay_env * fade_out_env
-            combined = wave * envelope * 0.28  # Slightly louder for punch
-            arr[i] = [combined, combined]
-        
-        arr = (arr * 32767).astype(np.int16)
-        return pygame.sndarray.make_sound(arr)
-    
-    def _create_melodic_tone_off(self, frequency: float, timbre: str) -> pygame.mixer.Sound:
-        """Create a softer, shorter 'off' variation for quick responsiveness"""
-        duration = 0.3  # Much shorter for immediate response
-        frames = int(duration * self.synth.sample_rate)
-        arr = np.zeros((frames, 2))
-        
-        ## Slightly lower frequency for "off" variation (more mellow feeling)
-        off_frequency = frequency * 0.85
-        
-        for i in range(frames):
-            t = i / self.synth.sample_rate
-            
-            ## Quick attack for immediate response (10ms)
-            attack_time = 0.01
-            if t < attack_time:
-                attack_env = t / attack_time
-            else:
-                attack_env = 1.0
-            
-            ## Similar timbres but with reduced intensity and quicker but natural decay
-            if timbre == 'bell':
-                wave = np.sin(2 * np.pi * off_frequency * t)
-                wave += 0.15 * np.sin(2 * np.pi * off_frequency * 2 * t)  # Reduced harmonics
-                decay_env = np.exp(-t * 3.5)  # Quick but natural decay
-            elif timbre == 'soft':
-                wave = np.sin(2 * np.pi * off_frequency * t)
-                decay_env = np.exp(-t * 3.0)  # Quick but gentle decay
-            elif timbre == 'bright':
-                wave = np.sin(2 * np.pi * off_frequency * t)
-                wave += 0.1 * np.sin(2 * np.pi * off_frequency * 1.5 * t)  # Less bright
-                decay_env = np.exp(-t * 3.2)  # Quick but natural decay
-            elif timbre == 'sparkle':
-                wave = np.sin(2 * np.pi * off_frequency * t)
-                wave += 0.2 * np.sin(2 * np.pi * off_frequency * 2.5 * t)  # Reduced sparkle
-                wave += 0.1 * np.sin(2 * np.pi * off_frequency * 4 * t)
-                decay_env = np.exp(-t * 3.8)  # Quick but natural sparkle fade
-            else:
-                wave = np.sin(2 * np.pi * off_frequency * t)
-                decay_env = np.exp(-t * 3.0)
-            
-            ## Add final fade-out to prevent cutoffs (last 0.05s for shorter "off" sounds)
-            fade_out_time = 0.05
-            if t > (duration - fade_out_time):
-                fade_out_env = (duration - t) / fade_out_time  # Linear fade to silence
-            else:
-                fade_out_env = 1.0
-            
-            ## Combine attack, decay, and fade-out for quick "off" response
-            envelope = attack_env * decay_env * fade_out_env
-            combined = wave * envelope * 0.18  # Reduced volume for "off" character
-            arr[i] = [combined, combined]
-        
-        arr = (arr * 32767).astype(np.int16)
-        return pygame.sndarray.make_sound(arr)
-    
-    def _create_chord(self, frequencies: List[float], duration: float) -> pygame.mixer.Sound:
-        """Create a chord by combining multiple frequencies"""
-        frames = int(duration * self.synth.sample_rate)
-        arr = np.zeros((frames, 2))
-        
-        for i in range(frames):
-            t = i / self.synth.sample_rate
-            combined_wave = 0
-            
-            ## Mix all frequencies together
-            for frequency in frequencies:
-                ## Apply frequency limits for toddler safety (200Hz-4kHz)
-                if frequency < 200:
-                    frequency = 200
-                elif frequency > 4000:
-                    frequency = 4000
-                
-                ## Generate sine wave for this frequency
-                wave = np.sin(2 * np.pi * frequency * t)
-                combined_wave += wave
-            
-            ## Normalize by number of frequencies to prevent clipping
-            if len(frequencies) > 0:
-                combined_wave = combined_wave / len(frequencies)
-            
-            ## Apply gentle envelope for natural sound
-            envelope = np.exp(-t * 0.5)  # Gentle decay
-            
-            ## Apply volume limit for safety
-            final_wave = combined_wave * envelope * 0.2
-            arr[i] = [final_wave, final_wave]
-        
-        ## Convert to pygame sound
-        arr = (arr * 32767).astype(np.int16)
-        return pygame.sndarray.make_sound(arr)
 
 class MusicalGarden:
     """Main application managing the musical garden experience"""
     
-    def __init__(self):
+    def __init__(self, virtual_mode=False):
         self.running = False
         self.midi_input = None
+        self.virtual_mode = virtual_mode
         self.synthesizer = AudioSynthesizer()
         self.nature_sounds = NatureSounds(self.synthesizer)
         
@@ -731,7 +41,7 @@ class MusicalGarden:
         ## Active sounds tracking
         self.active_sounds = {}
         
-        ## Toggle states for each pad (True = ON/playing, False = OFF/silent)
+        ## Toggle states for each pad
         self.pad_states = {}
         
         ## TUI callback for activity logging
@@ -1338,7 +648,7 @@ class GardenMonitorTUI:
                 self._draw_interface()
                 self._handle_input()
                 time.sleep(0.1)
-            except Exception as e:
+            except Exception:
                 ## Graceful error handling
                 break
         
@@ -1595,18 +905,437 @@ class GardenMonitorTUI:
     def _get_volume_description(self) -> str:
         return self.garden._get_volume_description(self.garden.master_volume)
 
+
+class VirtualSparkleController:
+    """Virtual SparkLE MIDI controller interface with visual feedback"""
+    
+    def __init__(self, garden: MusicalGarden):
+        self.garden = garden
+        self.running = False
+        self.stdscr = None
+        
+        ## Virtual knob states (0-127)
+        self.knob_states = {
+            'master_volume': 64,      # CC 10
+            'background_volume': 90,  # CC 12 
+            'melody_volume': 77,      # CC 13
+            'temperature': 64,        # CC 16 (K1)
+            'water': 38,             # CC 17 (K2)
+            'time_of_day': 64,       # CC 18 (K3)
+            'seasons': 64            # CC 7 (Tempo)
+        }
+        
+        ## Virtual pad states
+        self.pad_states = {}
+        for note in range(36, 67):  # All MIDI notes used
+            self.pad_states[note] = False
+            
+        ## Keyboard to MIDI mapping
+        self._setup_keyboard_mapping()
+        
+        ## Set up garden callback for activity logging
+        self.activity_log = []
+        self.max_log_entries = 5
+        self.garden._tui_callback = self._add_activity
+    
+    def _setup_keyboard_mapping(self):
+        """Create keyboard to MIDI note mapping"""
+        ## Big pads mapping (2x4 grid)
+        self.big_pad_keys = {
+            'q': 36, 'w': 38, 'e': 42, 'r': 46,  # Earth, Rain, Wind, Thunder
+            'a': 50, 's': 47, 'd': 43, 'f': 49   # Trees, Birds, Insects, Sun
+        }
+        
+        ## Number pads mapping (4x4 grid)
+        self.number_pad_keys = {
+            ## Seeds (Row 1)
+            '1': 51, '2': 52, '3': 53, '4': 54,
+            ## Sprouts (Row 2)  
+            '5': 55, '6': 56, '7': 57, '8': 58,
+            ## Buds (Row 3)
+            '9': 59, '0': 60, '-': 61, '=': 62,
+            ## Flowers (Row 4)
+            'z': 63, 'x': 64, 'c': 65, 'v': 66
+        }
+        
+        ## Combine all pad mappings
+        self.key_to_note = {**self.big_pad_keys, **self.number_pad_keys}
+        
+        ## Knob control keys
+        self.knob_keys = {
+            ## Environmental controls
+            '[': ('temperature', -5), ']': ('temperature', 5),
+            ';': ('water', -5), "'": ('water', 5),
+            ',': ('time_of_day', -5), '.': ('time_of_day', 5),
+            '/': ('seasons', -5), '\\': ('seasons', 5),
+            ## Volume controls
+            '-': ('master_volume', -5), '=': ('master_volume', 5),
+            'j': ('background_volume', -5), 'k': ('background_volume', 5),
+            'n': ('melody_volume', -5), 'm': ('melody_volume', 5)
+        }
+    
+    def start(self):
+        """Start the virtual controller interface"""
+        try:
+            ## Set up garden for virtual input
+            self.garden.running = True
+            print("🌸 Welcome to the Virtual Musical Garden! 🌸")
+            print("This is a toddler-friendly musical playground using keyboard input.")
+            print("Your virtual SparkLE controller is ready to play!")
+            print()
+            
+            ## Initialize curses
+            self.stdscr = curses.initscr()
+            curses.noecho()
+            curses.cbreak()
+            self.stdscr.keypad(True)
+            self.stdscr.nodelay(True)
+            curses.start_color()
+            curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)   # Active pads
+            curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)  # Headers
+            curses.init_pair(3, curses.COLOR_CYAN, curses.COLOR_BLACK)    # Knob values
+            curses.init_pair(4, curses.COLOR_RED, curses.COLOR_BLACK)     # Warnings
+            
+            ## Check minimum terminal size
+            height, width = self.stdscr.getmaxyx()
+            if height < 20 or width < 70:
+                raise Exception(f"Terminal too small. Need 20x70, got {height}x{width}")
+            
+            self.running = True
+            self._main_loop()
+            
+        except KeyboardInterrupt:
+            pass
+        except Exception as e:
+            if self.stdscr:
+                curses.endwin()
+            print(f"❌ Virtual controller error: {e}")
+        finally:
+            self._cleanup()
+    
+    def _main_loop(self):
+        """Main input and display loop"""
+        while self.running:
+            try:
+                ## Clear screen and draw interface
+                self.stdscr.clear()
+                self._draw_interface()
+                self.stdscr.refresh()
+                
+                ## Handle input (non-blocking)
+                key = self.stdscr.getch()
+                if key != -1:  # Key was pressed
+                    self._handle_keypress(key)
+                
+                ## Small delay to prevent excessive CPU usage
+                time.sleep(0.05)
+                
+            except KeyboardInterrupt:
+                break
+    
+    def _handle_keypress(self, key):
+        """Handle keyboard input"""
+        try:
+            ## Handle special keys first
+            if key == 27:  # ESC key
+                self.running = False
+                return
+            
+            key_char = chr(key).lower() if 32 <= key <= 126 else None
+            
+            ## Special command keys (highest priority)
+            if key_char == 'h':
+                self._show_help()
+                return
+            elif key == 32:  # Space bar for reset
+                self._reset_all()
+                return
+            
+            ## Knob keys (higher priority than pads for shared keys)
+            if key_char and key_char in self.knob_keys:
+                knob_name, delta = self.knob_keys[key_char]
+                self._adjust_knob(knob_name, delta)
+                return
+            
+            ## Pad keys (note on/off toggle) - lowest priority
+            if key_char and key_char in self.key_to_note:
+                note = self.key_to_note[key_char]
+                self._toggle_pad(note)
+                
+        except ValueError:
+            pass  # Ignore non-printable characters
+    
+    def _toggle_pad(self, note: int):
+        """Toggle virtual pad state and send MIDI event"""
+        ## Use the garden's toggle system directly
+        self.garden.handle_note_toggle(note, 100)  # Velocity 100
+        
+        ## Update our local state to match garden state
+        self.pad_states[note] = self.garden.pad_states.get(note, False)
+        
+        ## Log the activity
+        sound_name = self.garden.get_sound_name_for_note(note)
+        if sound_name:
+            state = "ON" if self.pad_states[note] else "OFF"
+            self._add_activity(f"🎵 {sound_name.replace('_', ' ').title()} {state}")
+    
+    def _adjust_knob(self, knob_name: str, delta: int):
+        """Adjust virtual knob value and send control change"""
+        current = self.knob_states[knob_name]
+        new_value = max(0, min(127, current + delta))
+        self.knob_states[knob_name] = new_value
+        
+        ## Map knob to appropriate CC
+        cc_mapping = {
+            'master_volume': 10,
+            'background_volume': 12,
+            'melody_volume': 13,
+            'temperature': 16,
+            'water': 17,
+            'time_of_day': 18,
+            'seasons': 7
+        }
+        
+        if knob_name in cc_mapping:
+            cc_number = cc_mapping[knob_name]
+            self.garden.handle_control_change(cc_number, new_value)
+            self._add_activity(f"🎛️ {knob_name.replace('_', ' ').title()}: {new_value}")
+    
+    def _draw_interface(self):
+        """Draw the virtual SparkLE controller interface"""
+        height, width = self.stdscr.getmaxyx()
+        
+        ## Title
+        title = "🎹 Virtual SparkLE Controller - Musical Garden"
+        self.stdscr.addstr(0, (width - len(title)) // 2, title, curses.color_pair(2) | curses.A_BOLD)
+        
+        ## Instructions
+        instructions = "Press H for help • ESC to quit • SPACE to reset • Keys toggle pads • []/;',./ adjust knobs"
+        self.stdscr.addstr(1, (width - len(instructions)) // 2, instructions)
+        
+        ## Draw controller layout with proper spacing
+        self._draw_big_pads(3, 2)
+        self._draw_number_pads(3, 40)
+        self._draw_knobs(12, 2)
+        self._draw_garden_status(3, 75)
+        self._draw_activity_log(23, 2)
+    
+    def _draw_big_pads(self, start_y: int, start_x: int):
+        """Draw big pads section"""
+        self.stdscr.addstr(start_y, start_x, "🌍 Garden Elements (Big Pads)", curses.color_pair(2))
+        
+        ## Draw 2x4 grid
+        pad_layout = [
+            [('Q', 36, 'Earth'), ('W', 38, 'Rain'), ('E', 42, 'Wind'), ('R', 46, 'Thunder')],
+            [('A', 50, 'Trees'), ('S', 47, 'Birds'), ('D', 43, 'Insects'), ('F', 49, 'Sun')]
+        ]
+        
+        for row_idx, row in enumerate(pad_layout):
+            y = start_y + 2 + row_idx * 2
+            for col_idx, (key, note, name) in enumerate(row):
+                x = start_x + col_idx * 8
+                active = self.pad_states[note]
+                color = curses.color_pair(1) if active else 0
+                status = "●" if active else "○"
+                self.stdscr.addstr(y, x, f"[{key}] {status} {name}", color)
+    
+    def _draw_number_pads(self, start_y: int, start_x: int):
+        """Draw number pads section"""
+        self.stdscr.addstr(start_y, start_x, "🎵 Melodic Tones (Number Pads)", curses.color_pair(2))
+        
+        ## Draw 4x4 grid
+        pad_layout = [
+            [('1', 51, 'Seed'), ('2', 52, 'Seed'), ('3', 53, 'Seed'), ('4', 54, 'Seed')],
+            [('5', 55, 'Sprout'), ('6', 56, 'Sprout'), ('7', 57, 'Sprout'), ('8', 58, 'Sprout')],
+            [('9', 59, 'Bud'), ('0', 60, 'Bud'), ('-', 61, 'Bud'), ('=', 62, 'Bud')],
+            [('Z', 63, 'Flower'), ('X', 64, 'Flower'), ('C', 65, 'Flower'), ('V', 66, 'Flower')]
+        ]
+        
+        for row_idx, row in enumerate(pad_layout):
+            y = start_y + 2 + row_idx
+            for col_idx, (key, note, name) in enumerate(row):
+                x = start_x + col_idx * 7
+                active = self.pad_states[note]
+                color = curses.color_pair(1) if active else 0
+                status = "●" if active else "○"
+                self.stdscr.addstr(y, x, f"{key}{status}", color)
+        
+        ## Add legend
+        self.stdscr.addstr(start_y + 7, start_x, "Seeds→Sprouts→Buds→Flowers", curses.A_DIM)
+    
+    def _draw_knobs(self, start_y: int, start_x: int):
+        """Draw knobs section"""
+        self.stdscr.addstr(start_y, start_x, "🎛️ Environmental Controls", curses.color_pair(2))
+        
+        knob_info = [
+            ('Temperature', 'temperature', '[]', self.garden._get_temperature_description(self.garden.temperature)),
+            ('Water', 'water', ";'", self.garden._get_water_description(self.garden.water)),
+            ('Time', 'time_of_day', ',.', self.garden._get_time_description(self.garden.time_of_day)),
+            ('Seasons', 'seasons', '/\\', self.garden._get_season_description(self.garden.seasons))
+        ]
+        
+        for i, (name, key, controls, desc) in enumerate(knob_info):
+            y = start_y + 1 + i
+            value = self.knob_states[key]
+            bar = "█" * (value // 8) + "░" * (16 - value // 8)
+            self.stdscr.addstr(y, start_x, f"{controls} {name:12} [{bar}] {value:3} - {desc}")
+        
+        ## Volume controls
+        self.stdscr.addstr(start_y + 6, start_x, "🔊 Volume Controls", curses.color_pair(2))
+        volume_info = [
+            ('Master', 'master_volume', '-=', self.garden._get_volume_description(self.garden.master_volume)),
+            ('Background', 'background_volume', 'jk', f"{int(self.garden.background_volume * 100)}%"),
+            ('Melody', 'melody_volume', 'nm', f"{int(self.garden.melody_volume * 100)}%")
+        ]
+        
+        for i, (name, key, controls, desc) in enumerate(volume_info):
+            y = start_y + 7 + i
+            value = self.knob_states[key]
+            bar = "█" * (value // 8) + "░" * (16 - value // 8)
+            self.stdscr.addstr(y, start_x, f"{controls} {name:10} [{bar}] {value:3} - {desc}")
+    
+    def _draw_garden_status(self, start_y: int, start_x: int):
+        """Draw garden status section"""
+        self.stdscr.addstr(start_y, start_x, "🌸 Garden Status", curses.color_pair(2))
+        
+        ## Count active sounds
+        active_backgrounds = sum(1 for note in self.garden.note_to_sound.keys() 
+                               if self.pad_states.get(note, False) and self.garden.is_big_pad_note(note))
+        active_melodies = sum(1 for note in self.garden.note_to_sound.keys()
+                            if self.pad_states.get(note, False) and not self.garden.is_big_pad_note(note))
+        
+        status_lines = [
+            f"Active Backgrounds: {active_backgrounds}/8",
+            f"Active Melodies: {active_melodies}/16",
+            f"Master Volume: {int(self.garden.master_volume * 100)}%",
+            "",
+            "Environment:",
+            f"  {self.garden._get_temperature_description(self.garden.temperature)}",
+            f"  {self.garden._get_water_description(self.garden.water)}",
+            f"  {self.garden._get_time_description(self.garden.time_of_day)}",
+            f"  {self.garden._get_season_description(self.garden.seasons)}"
+        ]
+        
+        for i, line in enumerate(status_lines):
+            if i < 10:  # Prevent overflow
+                self.stdscr.addstr(start_y + 1 + i, start_x, line)
+    
+    def _draw_activity_log(self, start_y: int, start_x: int):
+        """Draw recent activity log"""
+        height, width = self.stdscr.getmaxyx()
+        
+        self.stdscr.addstr(start_y, start_x, "📝 Recent Activity", curses.color_pair(2))
+        
+        ## Display recent activities
+        recent_activities = self.activity_log[-self.max_log_entries:]
+        for i, activity in enumerate(recent_activities):
+            if start_y + 1 + i < height - 1:
+                max_width = width - start_x - 2
+                display_text = activity[:max_width] if len(activity) > max_width else activity
+                self.stdscr.addstr(start_y + 1 + i, start_x, display_text)
+    
+    def _show_help(self):
+        """Show help overlay"""
+        help_text = [
+            "🎹 Virtual SparkLE Controller Help",
+            "",
+            "Big Pads (Garden Elements):",
+            "  QWER - Earth, Rain, Wind, Thunder",
+            "  ASDF - Trees, Birds, Insects, Sun", 
+            "",
+            "Number Pads (Melodic Tones):",
+            "  1234 - Seeds (low tones)",
+            "  5678 - Sprouts (mid tones)",
+            "  90-= - Buds (high tones)",
+            "  ZXCV - Flowers (highest tones)",
+            "",
+            "Environmental Controls:",
+            "  [] - Temperature (pitch)",
+            "  ;' - Water (echo)", 
+            "  ,. - Time of Day (brightness)",
+            "  /\\ - Seasons (character)",
+            "",
+            "Volume Controls:",
+            "  -= - Master Volume",
+            "  jk - Background Volume",
+            "  nm - Melody Volume",
+            "",
+            "Commands:",
+            "  H - This help",
+            "  SPACE - Reset all to silence",
+            "  ESC - Quit",
+            "",
+            "Press any key to continue..."
+        ]
+        
+        ## Create help overlay
+        height, width = self.stdscr.getmaxyx()
+        overlay_y = 2
+        overlay_x = 5
+        overlay_height = len(help_text) + 2
+        overlay_width = max(len(line) for line in help_text) + 4
+        
+        ## Draw help box
+        for i in range(overlay_height):
+            if overlay_y + i < height:
+                self.stdscr.addstr(overlay_y + i, overlay_x, " " * min(overlay_width, width - overlay_x), curses.A_REVERSE)
+        
+        for i, line in enumerate(help_text):
+            if overlay_y + 1 + i < height:
+                max_line_width = width - overlay_x - 4
+                display_line = line[:max_line_width] if len(line) > max_line_width else line
+                self.stdscr.addstr(overlay_y + 1 + i, overlay_x + 2, display_line, curses.A_REVERSE)
+        
+        self.stdscr.refresh()
+        self.stdscr.getch()  # Wait for key press
+    
+    def _reset_all(self):
+        """Reset all pads to silent state"""
+        for note in self.pad_states:
+            if self.pad_states[note]:  # If currently active
+                self.garden.turn_pad_off(note)
+                self.pad_states[note] = False
+        
+        self._add_activity("🔄 All sounds reset to silence")
+    
+    def _add_activity(self, message: str):
+        """Add activity to the log"""
+        timestamp = time.strftime("%H:%M:%S")
+        self.activity_log.append(f"[{timestamp}] {message}")
+        if len(self.activity_log) > self.max_log_entries * 2:
+            self.activity_log = self.activity_log[-self.max_log_entries:]
+    
+    def _cleanup(self):
+        """Clean up curses interface"""
+        if self.stdscr:
+            try:
+                curses.endwin()
+            except:
+                pass  # Ignore endwin errors
+        self.garden._complete_shutdown()
+
+
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(description='SparkLE Musical Garden')
-    parser.add_argument('--tui', action='store_true', 
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--tui', action='store_true', 
                        help='Run with full-screen garden monitoring dashboard')
+    group.add_argument('--simulator', action='store_true',
+                       help='Run with virtual SparkLE controller interface')
     args = parser.parse_args()
     
     try:
-        garden = MusicalGarden()
-        
-        if args.tui:
-            ## Run with TUI interface
+        if args.simulator:
+            garden = MusicalGarden(virtual_mode=True)
+            print("🎹 Starting Virtual SparkLE Controller...")
+            print("🖥️ Switching to full-screen mode...")
+            time.sleep(1)
+            
+            simulator = VirtualSparkleController(garden)
+            simulator.start()
+        elif args.tui:
+            garden = MusicalGarden(virtual_mode=False)
             print("🌸 Starting Garden Monitor Dashboard...")
             print("🖥️ Switching to full-screen mode...")
             time.sleep(1)
@@ -1614,7 +1343,7 @@ def main():
             tui = GardenMonitorTUI(garden)
             tui.start()
         else:
-            ## Run with simple CLI interface
+            garden = MusicalGarden(virtual_mode=False)
             garden.run()
             
     except Exception as e:
